@@ -74,6 +74,7 @@ const env = (key: string): string | undefined => {
 
 const googleClientId = env(["GOOGLE", "CLIENT", "ID"].join("_"));
 const googleClientSecret = env(["GOOGLE", "CLIENT", "SECRET"].join("_"));
+const vpsMode = env(["MATCHDESK", "VPS"].join("_")) === "1";
 
 // Explicit off-switch. The deployer sets `VITE_AUTH_ENABLED=true` when it
 // provisions auth; set it to "false" to force auth off everywhere (dev user).
@@ -96,7 +97,9 @@ export const authConfigured =
 // it derives the origin per-request from the (proxied) host, validated against the
 // preview allowlist, which makes the OAuth `redirect_uri` the concrete preview URL
 // the broker's preview client accepts.
-const explicitBaseURL = env("BETTER_AUTH_URL");
+const explicitBaseURL =
+  env(["BETTER", "AUTH", "URL"].join("_")) ??
+  (vpsMode ? "https://www.getmatchdesk.nl" : undefined);
 // Explicit `string[]` (not a readonly tuple) — Better Auth's DynamicBaseURLConfig
 // requires a mutable `allowedHosts: string[]`.
 const previewAllowedHosts: string[] = [...PREVIEW_ALLOWED_HOSTS];
