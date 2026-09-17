@@ -41,6 +41,7 @@ export function SiteShell() {
         <strong className="font-semibold">Matchdesk bemiddelt. Matchdesk installeert niet.</strong>{" "}
         Jouw installateur verzorgt de uitvoering.
       </p>
+      <SiteNotice />
       <header className={cn("sticky top-0 z-40 border-b", dark ? "border-white/8 bg-night/90 backdrop-blur-md" : "border-line bg-paper/90 backdrop-blur-md")}>
         <div className="mx-auto flex min-h-20 w-full max-w-[1400px] items-center justify-between gap-4 px-5 md:px-16">
           <Brand inverted={dark} />
@@ -194,6 +195,18 @@ export function PageIntro({
 
 export function Wrap({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("mx-auto w-full max-w-[1400px] px-5 md:px-16", className)}>{children}</div>;
+}
+
+function SiteNotice() {
+  const notice = useMatchdesk((s) => s.siteNotice);
+  const paused = useMatchdesk((s) => s.matchingPaused);
+  if (!notice && !paused) return null;
+  return (
+    <p className="bg-amber px-4 py-2 text-center text-[13px] font-semibold text-ink">
+      {paused ? "Matching staat tijdelijk gepauzeerd. " : null}
+      {notice}
+    </p>
+  );
 }
 
 function AuthSlot() {
