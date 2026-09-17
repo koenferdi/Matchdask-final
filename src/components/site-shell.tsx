@@ -13,9 +13,10 @@ import { isOwner } from "@/lib/owner";
 const NAV = [
   { to: "/", hash: "oplossingen", label: "Oplossingen" },
   { to: "/", hash: "werkwijze", label: "Zo werkt het" },
-  { to: "/installateurs", label: "Voor bedrijven" },
+  { to: "/rapport", label: "Woningrapport" },
+  { to: "/installateurs", label: "Installateurs" },
+  { to: "/exclusief", label: "Exclusief-proof" },
   { to: "/blog", label: "Inzicht" },
-  { to: "/wachtlijst", label: "Early-bird €149", highlight: true },
   { to: "/tools", label: "Slimme tools" },
 ] as const;
 
@@ -221,6 +222,9 @@ function AuthSlot() {
       <div className="hidden items-center gap-3 md:flex">
         <Link to="/portalen" className="text-sm font-semibold hover:text-bright">
           Mijn Matchdesk
+        </Link>
+        <Link to="/rapport" className="text-sm font-semibold hover:text-bright">
+          Rapport
         </Link>
         {isOwner(user) ? (
           <Link to="/beheer" className="text-sm font-semibold text-bright hover:text-bright">

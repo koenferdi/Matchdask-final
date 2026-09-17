@@ -18,6 +18,7 @@ import {
   type Shade,
 } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
+import { useCurrentUser } from "@/lib/auth/use-current-user";
 
 type Search = { paid?: string };
 
@@ -31,12 +32,15 @@ export const Route = createFileRoute("/rapport")({
 function RapportPage() {
   const { paid } = Route.useSearch();
   const { leads, reportPaid, markReportPaid, patchLead } = useMatchdesk();
+  const user = useCurrentUser();
   useEffect(() => {
     if (paid === "1") markReportPaid();
   }, [paid, markReportPaid]);
 
   const unlocked = paid === "1" || reportPaid;
-  const lead = leads[0];
+  const email = user?.primaryEmail?.toLowerCase();
+  const lead =
+    (email ? leads.find((l) => l.email.toLowerCase() === email) : undefined) ?? leads[0];
   const [usage, setUsage] = useState(lead?.usageKwh ? String(lead.usageKwh) : "");
   const [roofType, setRoofType] = useState<RoofType | "">(lead?.roofType ?? "");
   const [roofDir, setRoofDir] = useState<RoofDir | "">(lead?.roofDir ?? "");

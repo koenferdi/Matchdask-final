@@ -4,6 +4,7 @@ import { isOwnerEmail } from "@/lib/owner";
 import {
   publicPartners,
   readWorkspaceFile,
+  realPartners,
   writeWorkspaceFile,
   type WorkspaceFile,
 } from "@/lib/workspace-file";
@@ -17,18 +18,27 @@ async function ownerFrom(request: Request) {
   }
 }
 
-function merge(current: WorkspaceFile, incoming: Partial<WorkspaceFile>): WorkspaceFile {
+function appendOnly(current: WorkspaceFile, incoming: Partial<WorkspaceFile>): WorkspaceFile {
   const leadIds = new Set(current.leads.map((l) => l.id));
   const partnerIds = new Set(current.partners.map((p) => p.id));
+  const kvks = new Set(current.partners.map((p) => p.kvk));
   const subs = new Set(current.subscribers.map((s) => s.email.toLowerCase()));
+  const extraLeads = (incoming.leads ?? []).filter((l) => l?.id && !leadIds.has(l.id));
+  const extraPartners = realPartners(incoming.partners ?? []).filter(
+    (p) =>
+      p?.id &&
+      !partnerIds.has(p.id) &&
+      !kvks.has(p.kvk) &&
+      p.status === "Te beoordelen",
+  );
+  const extraSubs = (incoming.subscribers ?? []).filter(
+    (s) => s?.email && !subs.has(s.email.toLowerCase()),
+  );
   return {
     ...current,
-    leads: [...current.leads, ...(incoming.leads ?? []).filter((l) => !leadIds.has(l.id))],
-    partners: [...current.partners, ...(incoming.partners ?? []).filter((p) => !partnerIds.has(p.id))],
-    subscribers: [
-      ...current.subscribers,
-      ...(incoming.subscribers ?? []).filter((s) => !subs.has(s.email.toLowerCase())),
-    ],
+    leads: [...current.leads, ...extraLeads],
+    partners: [...current.partners, ...extraPartners],
+    subscribers: [...current.subscribers, ...extraSubs],
   };
 }
 
@@ -63,21 +73,20 @@ export const Route = createFileRoute("/api/workspace")({
         }
         const current = readWorkspaceFile();
         if (owner) {
-          const next: WorkspaceFile = {
+          writeWorkspaceFile({
             leads: Array.isArray(incoming.leads) ? incoming.leads : current.leads,
-            partners: Array.isArray(incoming.partners) ? incoming.partners : current.partners,
+            partners: realPartners(Array.isArray(incoming.partners) ? incoming.partners : current.partners),
             subscribers: Array.isArray(incoming.subscribers) ? incoming.subscribers : current.subscribers,
             notes: Array.isArray(incoming.notes) ? incoming.notes : current.notes,
             activeLeadId: incoming.activeLeadId,
             reportPaid: incoming.reportPaid,
             exclusivePaid: incoming.exclusivePaid,
-            siteNotice: incoming.siteNotice ?? "",
+            siteNotice: incoming.siteNotice ?? current.siteNotice ?? "",
             matchingPaused: Boolean(incoming.matchingPaused),
-          };
-          writeWorkspaceFile(next);
+          });
           return Response.json({ ok: true, full: true });
         }
-        writeWorkspaceFile(merge(current, incoming));
+        writeWorkspaceFile(appendOnly(current, incoming));
         return Response.json({ ok: true, full: false });
       },
     },

@@ -166,9 +166,13 @@ export function loadWorkspace(): Workspace {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyWorkspace();
     const parsed = JSON.parse(raw) as Workspace;
+    const fake = new Set(["P-UT-01", "P-NH-02", "P-ZL-03"]);
+    const partners = (Array.isArray(parsed.partners) ? parsed.partners : []).filter(
+      (p) => !p.example && !fake.has(p.id) && !String(p.email || "").endsWith(".example"),
+    );
     return {
       leads: Array.isArray(parsed.leads) ? parsed.leads : [],
-      partners: Array.isArray(parsed.partners) ? parsed.partners : [],
+      partners,
       subscribers: Array.isArray(parsed.subscribers) ? parsed.subscribers : [],
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       activeLeadId: parsed.activeLeadId,
@@ -217,7 +221,7 @@ export function regionLabel(postcode: string) {
 
 export function findPartnerFor(lead: Pick<Lead, "product" | "postcode">, partners: Partner[]) {
   const prefix = postcodePrefix(lead.postcode);
-  const active = partners.filter((p) => p.status === "Actief");
+  const active = partners.filter((p) => p.status === "Actief" && !p.example);
   const regional = active.filter(
     (p) => p.prefixes.includes(prefix) && p.products.includes(lead.product),
   );

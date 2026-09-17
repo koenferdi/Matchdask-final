@@ -327,10 +327,7 @@ export const useMatchdesk = create<Store>((set, get) => ({
     persistNow(get);
   },
   markExclusivePaid: () => {
-    set((s) => ({
-      exclusivePaid: true,
-      partners: s.partners.map((p, i) => (i === 0 || p.exclusivePaid ? { ...p, exclusivePaid: true } : p)),
-    }));
+    set({ exclusivePaid: true });
     persistNow(get);
   },
   setPartnerExclusive: (id, paid) => {

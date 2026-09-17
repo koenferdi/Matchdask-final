@@ -14,6 +14,7 @@ files=(
   src/lib/store.ts
   src/lib/blog.ts
   src/lib/workspace-file.ts
+  src/lib/owner.ts
   src/routes/index.tsx
   src/routes/aanvragen.tsx
   src/routes/rapport.tsx
