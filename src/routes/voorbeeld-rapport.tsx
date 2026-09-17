@@ -4,7 +4,7 @@ import { Wrap } from "@/components/site-shell";
 import { FitDocument } from "@/components/fit-document";
 import { SAMPLE_LEAD } from "@/lib/matchdesk";
 
-export const Route = createFileRoute("/rapport/voorbeeld")({ component: SampleReport });
+export const Route = createFileRoute("/voorbeeld-rapport")({ component: SampleReport });
 
 function SampleReport() {
   return (

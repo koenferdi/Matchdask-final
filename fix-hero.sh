@@ -5,6 +5,7 @@ APP=/opt/matchdesk
 BASE=https://raw.githubusercontent.com/koenferdi/Matchdask-final/main
 cd "$APP"
 mkdir -p src/routes/api src/lib src/components /opt/matchdesk/data
+rm -f src/routes/rapport.voorbeeld.tsx src/routes/exclusief.voorbeeld.tsx
 files=(
   src/components/cinema-hero.tsx
   src/components/auth-form.tsx
@@ -23,9 +24,9 @@ files=(
   src/routes/index.tsx
   src/routes/aanvragen.tsx
   src/routes/rapport.tsx
-  src/routes/rapport.voorbeeld.tsx
+  src/routes/voorbeeld-rapport.tsx
   src/routes/exclusief.tsx
-  src/routes/exclusief.voorbeeld.tsx
+  src/routes/voorbeeld-badge.tsx
   src/routes/woning.tsx
   src/routes/voor-bedrijven.tsx
   src/routes/installateurs.tsx

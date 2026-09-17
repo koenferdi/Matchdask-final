@@ -59,7 +59,7 @@ function RapportPage() {
             <a href={STRIPE.woningscan}>Betaal €39 en open het rapport</a>
           </Button>
           <Button asChild variant="ghost" className="mt-3">
-            <Link to="/rapport/voorbeeld">Bekijk een voorbeeldrapport</Link>
+            <Link to="/voorbeeld-rapport">Bekijk een voorbeeldrapport</Link>
           </Button>
         </Wrap>
       </main>

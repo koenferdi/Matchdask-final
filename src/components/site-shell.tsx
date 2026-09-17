@@ -144,7 +144,7 @@ export function SiteShell() {
             <Link to="/aanvragen">Vind een installateur</Link>
             <Link to="/wachtlijst">Gratis woningscan</Link>
             <Link to="/rapport">Mijn woningrapport</Link>
-            <Link to="/rapport/voorbeeld">Voorbeeldrapport</Link>
+            <Link to="/voorbeeld-rapport">Voorbeeldrapport</Link>
             <Link to="/klant">Mijn project</Link>
             <Link to="/klant/afspraken">Afspraak maken</Link>
             <Link to="/tools">Slimme tools</Link>
@@ -155,7 +155,7 @@ export function SiteShell() {
             <Link to="/voor-bedrijven">Start voor installateurs</Link>
             <Link to="/installateurs">Geverifieerde installateurs</Link>
             <Link to="/exclusief">Exclusief-proof · €149</Link>
-            <Link to="/exclusief/voorbeeld">Badge-pakket</Link>
+            <Link to="/voorbeeld-badge">Badge-pakket</Link>
             <Link to="/aanmelden">Bedrijf aanmelden</Link>
             <Link to="/bedrijf">Bedrijfsportaal</Link>
           </FooterCol>

@@ -325,7 +325,7 @@ function Keuring() {
         </ul>
       )}
       <p className="mt-6 text-xs text-muted">
-        Voorbeeldrapport: /rapport/voorbeeld · Badge-pakket: /exclusief/voorbeeld
+        Voorbeeldrapport: /voorbeeld-rapport · Badge-pakket: /voorbeeld-badge
       </p>
     </section>
   );

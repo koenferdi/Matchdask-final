@@ -5,7 +5,7 @@ import { Wrap } from "@/components/site-shell";
 import { ProofBadge } from "@/components/proof-badge";
 import { STRIPE } from "@/lib/matchdesk";
 
-export const Route = createFileRoute("/exclusief/voorbeeld")({ component: BadgePakket });
+export const Route = createFileRoute("/voorbeeld-badge")({ component: BadgePakket });
 
 function BadgePakket() {
   return (

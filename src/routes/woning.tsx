@@ -29,7 +29,7 @@ function WoningPage() {
               </Link>
             </Button>
             <Button asChild variant="ghost">
-              <Link to="/rapport/voorbeeld">Voorbeeldrapport</Link>
+              <Link to="/voorbeeld-rapport">Voorbeeldrapport</Link>
             </Button>
           </div>
         </Wrap>

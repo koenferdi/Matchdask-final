@@ -31,7 +31,7 @@ function BedrijvenPage() {
                 </Link>
               </Button>
               <Button asChild variant="ghost">
-                <Link to="/exclusief/voorbeeld">Bekijk het badge-pakket</Link>
+                <Link to="/voorbeeld-badge">Bekijk het badge-pakket</Link>
               </Button>
             </div>
           </div>

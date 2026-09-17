@@ -36,7 +36,7 @@ function ExclusiefPage() {
           <div>
             <p className="text-xs tracking-[0.16em] text-mint">DE BADGE</p>
             <h2 className="mt-1 font-display text-2xl">Exclusief partner · gecontroleerd door Matchdesk</h2>
-            <Link to="/exclusief/voorbeeld" className="mt-2 inline-block text-sm text-mint underline-offset-4 hover:underline">
+            <Link to="/voorbeeld-badge" className="mt-2 inline-block text-sm text-mint underline-offset-4 hover:underline">
               Bekijk het pakket
             </Link>
           </div>
@@ -72,7 +72,7 @@ function ExclusiefPage() {
             </Button>
           )}
           <Button asChild variant="ghost">
-            <Link to="/exclusief/voorbeeld">Voorbeeld van het pakket</Link>
+            <Link to="/voorbeeld-badge">Voorbeeld van het pakket</Link>
           </Button>
           <Button asChild variant="ghost">
             <Link to="/aanmelden">Bedrijf aanmelden</Link>
