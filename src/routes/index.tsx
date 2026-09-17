@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Plus } from "lucide-react";
 import { Wrap } from "@/components/site-shell";
 import { CinemaHero, HomeScrollReveal } from "@/components/cinema-hero";
+import { DemoPortal } from "@/components/demo-portal";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { CONTACT, kwh } from "@/lib/matchdesk";
 import { ARTICLES } from "@/lib/blog";
@@ -177,41 +178,7 @@ function Home() {
               </Link>
             </div>
           </div>
-          <div className="overflow-hidden rounded-lg border border-white/10 bg-night">
-            <div className="flex items-center justify-between border-b border-white/8 px-4 py-3 text-xs text-mint/60">
-              <span className="flex gap-1.5">
-                <i className="size-2.5 rounded-full bg-white/20" />
-                <i className="size-2.5 rounded-full bg-white/20" />
-                <i className="size-2.5 rounded-full bg-white/20" />
-              </span>
-              <span>matchdesk / jouw werkruimte</span>
-              <span>INTERACTIEF VOORBEELD</span>
-            </div>
-            <div className="grid md:grid-cols-[220px_1fr]">
-              <nav className="border-b border-white/8 p-5 md:border-b-0 md:border-r" aria-label="Voorbeeldportaal">
-                <strong className="mb-4 block text-sm">Jouw Matchdesk</strong>
-                <Link to="/klant" className="flex items-center gap-2 py-2 text-sm text-mint">
-                  Voor mijn woning
-                </Link>
-                <Link to="/bedrijf" className="flex items-center gap-2 py-2 text-sm text-mint/60 hover:text-mint">
-                  Voor mijn bedrijf
-                </Link>
-                <Link to="/blog" className="flex items-center gap-2 py-2 text-sm text-mint/60 hover:text-mint">
-                  Inzicht & blog
-                </Link>
-              </nav>
-              <div className="p-6">
-                <span className="text-[11px] tracking-[0.14em] text-mint/50">FICTIEF VOORBEELD</span>
-                <h3 className="mt-2 font-display text-3xl">Welkom thuis, Fleur.</h3>
-                <p className="mt-2 text-mint/70">Jouw energieproject krijgt vorm.</p>
-                <img
-                  src="/higgsfield/solar.webp"
-                  alt="Illustratie bij het voorbeeldportaal"
-                  className="mt-6 h-48 w-full rounded-md object-cover"
-                />
-              </div>
-            </div>
-          </div>
+          <DemoPortal />
         </Wrap>
       </section>
 

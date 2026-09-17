@@ -9,6 +9,7 @@ files=(
   src/components/cinema-hero.tsx
   src/components/auth-form.tsx
   src/components/site-shell.tsx
+  src/components/demo-portal.tsx
   src/styles.css
   src/lib/matchdesk.ts
   src/lib/store.ts
