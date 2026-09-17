@@ -47,6 +47,8 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   body {
@@ -55,6 +57,8 @@
     font-family: var(--font-sans);
     margin: 0;
     line-height: 1.6;
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   h1,
@@ -113,6 +117,7 @@
   position: relative;
   isolation: isolate;
   height: 185vh;
+  overflow-x: clip;
 }
 
 .cinema-stage {
@@ -120,7 +125,7 @@
   top: 0;
   height: 100svh;
   min-height: 36rem;
-  overflow: hidden;
+  overflow: clip;
   background: var(--color-night);
 }
 

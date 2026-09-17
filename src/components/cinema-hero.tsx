@@ -37,7 +37,7 @@ export function CinemaHero() {
   }, []);
 
   const p = reduced ? 0 : progress;
-  const scale = 1 + p * 0.22;
+  const scale = 1 + p * (typeof window !== "undefined" && window.innerWidth < 720 ? 0.08 : 0.18);
   const x = p * -3.2;
   const y = p * -2.4;
   const copyFade = Math.max(0, 1 - p * 1.35);

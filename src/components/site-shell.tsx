@@ -38,7 +38,7 @@ export function SiteShell() {
   }, [pathname]);
 
   return (
-    <div className={cn("min-h-svh", dark ? "bg-night text-paper" : "bg-paper text-ink")}>
+    <div className={cn("min-h-svh overflow-x-clip", dark ? "bg-night text-paper" : "bg-paper text-ink")}>
       <p className="bg-deep px-4 py-2 text-center text-[13px] text-mint">
         <strong className="font-semibold">Matchdesk bemiddelt. Matchdesk installeert niet.</strong>{" "}
         Jouw installateur verzorgt de uitvoering.
