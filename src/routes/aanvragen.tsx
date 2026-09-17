@@ -99,10 +99,16 @@ function Aanvragen() {
                   <li className="flex gap-2"><Check className="size-4 text-teal" /> Oriëntatie — geen installatiegarantie</li>
                 </ul>
                 <Button asChild variant="mint" className="mt-5">
-                  <a href={STRIPE.woningscan} target="_blank" rel="noopener noreferrer">
-                    Bekijk het woningrapport · €39 <ArrowRight className="size-4" />
+                  <a href={STRIPE.woningscan}>
+                    Betaal €39 en open het rapport <ArrowRight className="size-4" />
                   </a>
                 </Button>
+                <p className="mt-3 text-xs text-muted">
+                  Na betaling kom je terug op je rapport. Al betaald?{" "}
+                  <Link to="/rapport" search={{ paid: "1" }} className="font-semibold text-teal">
+                    Open het woningrapport
+                  </Link>
+                </p>
               </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 {user ? (

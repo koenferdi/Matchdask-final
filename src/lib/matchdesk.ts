@@ -26,7 +26,7 @@ export const STAGES = [
 export type Stage = (typeof STAGES)[number];
 
 export const STRIPE = {
-  woningscan: "https://buy.stripe.com/7sY00kbJl3tg9a1fTJa7C00",
+  woningscan: "https://buy.stripe.com/7sY6oIdRt1l80Dv22Ta7C02",
   exclusief: "https://buy.stripe.com/4gMaEY4gTfbY71TcHxa7C01",
 } as const;
 
@@ -182,6 +182,7 @@ export function postcodePrefix(postcode: string) {
 
 export function regionLabel(postcode: string) {
   const n = Number(postcode.replace(/\D/g, "").slice(0, 2));
+  if (n === 13) return "Flevoland";
   if (n >= 10 && n < 20) return "Noord-Holland";
   if (n >= 20 && n < 30) return "Zuid-Holland";
   if (n >= 30 && n < 40) return "Utrecht / Midden";
