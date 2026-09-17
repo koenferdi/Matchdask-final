@@ -7,6 +7,7 @@ cd "$APP"
 curl -fsSL "$BASE/src/components/cinema-hero.tsx" -o src/components/cinema-hero.tsx
 curl -fsSL "$BASE/src/styles.css" -o src/styles.css
 curl -fsSL "$BASE/src/routes/index.tsx" -o src/routes/index.tsx
+curl -fsSL "$BASE/src/components/auth-form.tsx" -o src/components/auth-form.tsx
 set -a
 # shellcheck disable=SC1091
 . /etc/matchdesk.env
