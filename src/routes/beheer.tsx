@@ -70,52 +70,68 @@ function Beheer() {
   ];
 
   return (
-    <main className="bg-paper py-16 text-ink">
+    <main className="bg-paper py-8 text-ink md:py-12">
       <Wrap>
-        <PageIntro kicker="Beheer · alleen jij" title="Volledige controle.">
-          Aanvragen, partners, nieuwsbrief, website-status en notities. Klanten en installateurs zien dit niet.
-        </PageIntro>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-teal">Beheer · alleen jij</p>
+            <h1 className="mt-2 font-display text-[clamp(1.8rem,3vw,2.6rem)]">Cockpit</h1>
+          </div>
+          <p className="text-sm text-muted">
+            {data.leads.length} aanvragen · {data.partners.length} bedrijven · {data.subscribers.length} nieuwsbrief
+          </p>
+        </div>
         {data.serverOwner === false ? (
           <p className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            De server herkent dit inlog niet als eigenaar. Verwijderen van bedrijven blijft dan niet bewaard.
-            Log in met info@getmatchdesk.nl of koenferdi@gmail.com, of gebruik het Google-account dat bij Matchdesk hoort.
-          </p>
-        ) : data.serverOwner === true ? (
-          <p className="mb-6 rounded-md border border-line bg-mint/20 px-4 py-3 text-sm">
-            Wijzigingen worden op de server bewaard. Verwijderde bedrijven komen niet terug.
+            Server herkent dit account niet als eigenaar. Wijzigingen blijven dan niet bewaard. Log in met
+            koenferdi@gmail.com of info@getmatchdesk.nl.
           </p>
         ) : null}
-        <div className="mb-8 flex flex-wrap gap-2">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`rounded-sm border px-3 py-2 text-sm font-semibold ${
-                tab === t.id ? "border-teal bg-mint/30 text-ink" : "border-line text-muted"
-              }`}
+        <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+          <nav className="lg:sticky lg:top-28 lg:self-start" aria-label="Beheer">
+            <select
+              className="field-input lg:hidden"
+              value={tab}
+              onChange={(e) => setTab(e.target.value as Tab)}
             >
-              {t.label}
-            </button>
-          ))}
+              {tabs.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <ul className="hidden lg:block">
+              {tabs.map((t) => (
+                <li key={t.id}>
+                  <button
+                    type="button"
+                    onClick={() => setTab(t.id)}
+                    className={`w-full rounded-sm px-3 py-2.5 text-left text-sm font-semibold ${
+                      tab === t.id ? "bg-mint/40 text-ink" : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div>
+            {tab === "overzicht" ? <Overzicht onOpen={setTab} /> : null}
+            {tab === "aanvragen" ? <Aanvragen /> : null}
+            {tab === "installateurs" ? <Installateurs /> : null}
+            {tab === "afspraken" ? <Afspraken /> : null}
+            {tab === "nieuwsbrief" ? <Nieuwsbrief /> : null}
+            {tab === "website" ? <Website /> : null}
+            {tab === "notities" ? <Notities /> : null}
+          </div>
         </div>
-        {tab === "overzicht" ? <Overzicht /> : null}
-        {tab === "aanvragen" ? <Aanvragen /> : null}
-        {tab === "installateurs" ? <Installateurs /> : null}
-        {tab === "afspraken" ? <Afspraken /> : null}
-        {tab === "nieuwsbrief" ? <Nieuwsbrief /> : null}
-        {tab === "website" ? <Website /> : null}
-        {tab === "notities" ? <Notities /> : null}
-        <p className="mt-8 text-xs text-muted">
-          Ingelogd als eigenaar · {data.leads.length} aanvragen · {data.partners.length} installateurs ·{" "}
-          {data.subscribers.length} nieuwsbrief
-        </p>
       </Wrap>
     </main>
   );
 }
 
-function Overzicht() {
+function Overzicht({ onOpen }: { onOpen: (tab: Tab) => void }) {
   const { leads, partners, subscribers, matchingPaused, siteNotice } = useMatchdesk();
   const [health, setHealth] = useState<"laden" | "online" | "offline">("laden");
   useEffect(() => {
@@ -142,6 +158,20 @@ function Overzicht() {
         <Stat label="Afgerond" value={String(done)} />
         <Stat label="Partners te beoordelen" value={String(pending)} />
         <Stat label="Nieuwsbrief" value={String(subscribers.length)} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["aanvragen", "Alle aanvragen"],
+            ["installateurs", "Bedrijven"],
+            ["afspraken", "Afspraken"],
+            ["website", "Website & export"],
+          ] as const
+        ).map(([id, label]) => (
+          <Button key={id} size="sm" variant="ghost" onClick={() => onOpen(id)}>
+            {label}
+          </Button>
+        ))}
       </div>
       {siteNotice ? (
         <div className="rounded-lg border border-amber/40 bg-white p-4 text-sm">
@@ -497,6 +527,8 @@ function Website() {
             ["Klant", "/klant"],
             ["Bedrijf", "/bedrijf"],
             ["Installateurs", "/installateurs"],
+            ["Rapport", "/rapport"],
+            ["Exclusief", "/exclusief"],
             ["Blog", "/blog"],
             ["Tools", "/tools"],
             ["Nieuwsbrief", "/nieuwsbrief"],

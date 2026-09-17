@@ -7,6 +7,7 @@ import { CONTACT } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { UserButton } from "@/lib/auth/gates";
+import { signOut } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { isOwner } from "@/lib/owner";
 
@@ -44,9 +45,11 @@ export function SiteShell() {
       </p>
       <SiteNotice />
       <header className={cn("sticky top-0 z-40 border-b", dark ? "border-white/8 bg-night/90 backdrop-blur-md" : "border-line bg-paper/90 backdrop-blur-md")}>
-        <div className="mx-auto flex min-h-20 w-full max-w-[1400px] items-center justify-between gap-4 px-5 md:px-16">
-          <Brand inverted={dark} />
-          <nav className="hidden items-center gap-7 text-[14px] font-semibold lg:flex" aria-label="Hoofdnavigatie">
+        <div className="mx-auto flex min-h-16 w-full max-w-[1400px] items-center gap-3 px-4 md:min-h-20 md:px-16">
+          <div className="min-w-0 shrink-0">
+            <Brand inverted={dark} />
+          </div>
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-6 text-[14px] font-semibold lg:flex" aria-label="Hoofdnavigatie">
             {NAV.map((item) => (
               <Link
                 key={item.label}
@@ -66,12 +69,10 @@ export function SiteShell() {
               </Link>
             ) : null}
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <AuthSlot />
-            <Button asChild variant={dark ? "mint" : "default"} size="sm" className="hidden sm:inline-flex">
-              <Link to="/aanvragen">
-                Vind mijn installateur
-              </Link>
+            <Button asChild variant={dark ? "mint" : "default"} size="sm" className="hidden lg:inline-flex">
+              <Link to="/aanvragen">Vind mijn installateur</Link>
             </Button>
             <button
               type="button"
@@ -102,9 +103,18 @@ export function SiteShell() {
               </Link>
             ) : null}
             {user ? (
-              <Link to="/portalen" className="rounded-sm px-2 py-3 text-base font-semibold">
-                Mijn Matchdesk
-              </Link>
+              <>
+                <Link to="/portalen" className="rounded-sm px-2 py-3 text-base font-semibold">
+                  Mijn Matchdesk
+                </Link>
+                <button
+                  type="button"
+                  className="rounded-sm px-2 py-3 text-left text-base font-semibold"
+                  onClick={() => void signOut()}
+                >
+                  Uitloggen
+                </button>
+              </>
             ) : (
               <>
                 <Link to="/login" search={{ mode: "inloggen" }} className="rounded-sm px-2 py-3 text-base font-semibold">
@@ -223,20 +233,16 @@ function SiteNotice() {
 function AuthSlot() {
   const { user, isPending } = useCurrentUserState();
   if (isPending) {
-    return <div className="h-8 w-16 animate-pulse rounded-sm bg-current/10" />;
+    return <div className="size-8 animate-pulse rounded-full bg-current/10" />;
   }
   if (user) {
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {isOwner(user) ? (
           <Link to="/beheer" className="text-sm font-semibold text-bright">
             Beheer
           </Link>
-        ) : (
-          <Link to="/portalen" className="hidden text-sm font-semibold hover:text-bright sm:inline">
-            Mijn Matchdesk
-          </Link>
-        )}
+        ) : null}
         <UserButton />
       </div>
     );
