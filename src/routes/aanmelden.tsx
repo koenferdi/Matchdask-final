@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Shield } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
-import { PRODUCTS, STRIPE, type Product } from "@/lib/matchdesk";
+import { PRODUCTS, type Product } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 
 export const Route = createFileRoute("/aanmelden")({ component: Aanmelden });
@@ -36,8 +36,8 @@ function Aanmelden() {
     return (
       <main className="bg-paper py-16 text-ink">
         <Wrap>
-          <PageIntro kicker="Aanmelding ontvangen" title="Welkom in het netwerk.">
-            Je bedrijf staat klaar voor beoordeling. Optioneel: claim nu je early-bird voor Exclusief-proof.
+          <PageIntro kicker="Aanmelding ontvangen · gratis" title="Binnen. Geen betaling nodig.">
+            Je bedrijf staat klaar voor beoordeling. Aanmelden kost niets. Een badge is later optioneel — niet nu.
           </PageIntro>
           <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
             <section className="rounded-lg border border-line bg-white p-8">
@@ -46,23 +46,8 @@ function Aanmelden() {
               </div>
               <h2 className="text-3xl">Je aanmelding is binnen.</h2>
               <p className="mt-3 text-muted">
-                Matchdesk beoordeelt je bedrijf voordat je matches ontvangt. Ondertussen kun je je early-bird plek claimen.
+                Matchdesk beoordeelt KvK, vak en werkgebied. Bij toelating ontvang je 1:1-aanvragen. Geen inschrijfgeld.
               </p>
-              <div className="mt-6 rounded-lg border border-line p-6">
-                <span className="rounded-full bg-[#f4e6d0] px-2.5 py-1 text-[11px] font-semibold text-amber">Early-bird · €149</span>
-                <h3 className="mt-3 font-display text-2xl">Exclusief-proof — claim early-bird €149</h3>
-                <Button asChild className="mt-5">
-                  <a href={STRIPE.exclusief}>
-                    Claim early-bird €149 <ArrowRight className="size-4" />
-                  </a>
-                </Button>
-                <p className="mt-3 text-xs text-muted">
-                  Na betaling kom je terug op je keuringspagina. Al betaald?{" "}
-                  <Link to="/exclusief" search={{ paid: "1" }} className="font-semibold text-teal">
-                    Open Exclusief-proof
-                  </Link>
-                </p>
-              </div>
               <div className="mt-6 flex gap-3">
                 <Button asChild>
                   <Link
@@ -79,18 +64,18 @@ function Aanmelden() {
                   </Link>
                 </Button>
                 <Button asChild variant="ghost">
-                  <Link to="/wachtlijst">Early-bird €149</Link>
+                  <Link to="/voor-bedrijven">Terug</Link>
                 </Button>
               </div>
             </section>
             <aside className="h-fit rounded-lg border border-line bg-white p-6">
-              <Shield className="mb-3 size-6 text-teal" />
-              <h3 className="font-display text-2xl">Kwaliteit eerst.<br />Badge daarna.</h3>
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex gap-2"><Check className="size-4 text-teal" />Aanmelden blokkeert niets</div>
-                <div className="flex gap-2"><Check className="size-4 text-teal" />Early-bird tijdelijk €149</div>
-                <div className="flex gap-2"><Check className="size-4 text-teal" />Badge alleen na Actief + keuring</div>
-              </div>
+              <h3 className="font-display text-2xl">Later, als je wilt</h3>
+              <p className="mt-2 text-sm text-muted">
+                Exclusief-proof is een optionele keuring voor een publieke badge. Geen voorwaarde om mee te doen.
+              </p>
+              <Link to="/exclusief" className="mt-3 inline-block text-sm font-semibold text-teal">
+                Wat de badge is
+              </Link>
             </aside>
           </div>
         </Wrap>
@@ -101,8 +86,8 @@ function Aanmelden() {
   return (
     <main className="bg-paper py-16 text-ink">
       <Wrap>
-        <PageIntro kicker="Matchdesk voor bedrijven" title="Jouw bedrijf. Ons netwerk.">
-          Meld je aan voor een samenwerking op kwaliteit en werkgebied.
+        <PageIntro kicker="Gratis aanmelden" title="Jouw bedrijf. Ons netwerk.">
+          Geen inschrijfgeld. Je vult KvK, vak en werkgebied in. Daarna beoordelen wij. Een badge is later optioneel.
         </PageIntro>
         <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
           <section className="rounded-lg border border-line bg-white p-8">

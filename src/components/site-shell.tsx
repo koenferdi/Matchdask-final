@@ -154,7 +154,7 @@ export function SiteShell() {
           <FooterCol title="Voor jouw bedrijf">
             <Link to="/voor-bedrijven">Start voor installateurs</Link>
             <Link to="/installateurs">Geverifieerde installateurs</Link>
-            <Link to="/exclusief">Exclusief-proof · €149</Link>
+            <Link to="/exclusief">Optionele badge</Link>
             <Link to="/voorbeeld-badge">Badge-pakket</Link>
             <Link to="/aanmelden">Bedrijf aanmelden</Link>
             <Link to="/bedrijf">Bedrijfsportaal</Link>
