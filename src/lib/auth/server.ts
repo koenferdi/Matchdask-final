@@ -98,8 +98,7 @@ export const authConfigured =
 // preview allowlist, which makes the OAuth `redirect_uri` the concrete preview URL
 // the broker's preview client accepts.
 const explicitBaseURL =
-  env(["BETTER", "AUTH", "URL"].join("_")) ??
-  (vpsMode ? "https://www.getmatchdesk.nl" : undefined);
+  env(["BETTER", "AUTH", "URL"].join("_")) || "https://www.getmatchdesk.nl";
 // Explicit `string[]` (not a readonly tuple) — Better Auth's DynamicBaseURLConfig
 // requires a mutable `allowedHosts: string[]`.
 const previewAllowedHosts: string[] = [...PREVIEW_ALLOWED_HOSTS];

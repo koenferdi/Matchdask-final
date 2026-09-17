@@ -23,6 +23,14 @@ if [[ -z "${GOOGLE_CLIENT_ID:-}" || -z "${GOOGLE_CLIENT_SECRET:-}" ]]; then
 fi
 echo "Google keys geladen (${#GOOGLE_CLIENT_ID} / ${#GOOGLE_CLIENT_SECRET} tekens)"
 echo "BETTER_AUTH_URL=$BETTER_AUTH_URL"
+mkdir -p /etc/systemd/system/matchdesk.service.d
+cat >/etc/systemd/system/matchdesk.service.d/override.conf <<'OVR'
+[Service]
+Environment=BETTER_AUTH_URL=https://www.getmatchdesk.nl
+Environment=MATCHDESK_VPS=1
+Environment=VITE_AUTH_ENABLED=true
+OVR
+systemctl daemon-reload
 NODE_OPTIONS=--max-old-space-size=1536 npm run build
 systemctl restart matchdesk
 sleep 2
