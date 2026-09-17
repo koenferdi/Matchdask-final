@@ -101,12 +101,20 @@ export function SiteShell() {
                 Beheer
               </Link>
             ) : null}
-            <Link to="/login" search={{ mode: "inloggen" }} className="rounded-sm px-2 py-3 text-base font-semibold">
-              Inloggen
-            </Link>
-            <Link to="/login" search={{ mode: "aanmelden", role: "klant" }} className="rounded-sm px-2 py-3 text-base font-semibold">
-              Account maken
-            </Link>
+            {user ? (
+              <Link to="/portalen" className="rounded-sm px-2 py-3 text-base font-semibold">
+                Mijn Matchdesk
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" search={{ mode: "inloggen" }} className="rounded-sm px-2 py-3 text-base font-semibold">
+                  Inloggen
+                </Link>
+                <Link to="/login" search={{ mode: "aanmelden", role: "klant" }} className="rounded-sm px-2 py-3 text-base font-semibold">
+                  Account maken
+                </Link>
+              </>
+            )}
             <Button asChild variant="mint" className="mt-2">
               <Link to="/aanvragen">Vind mijn installateur</Link>
             </Button>
@@ -215,28 +223,26 @@ function SiteNotice() {
 function AuthSlot() {
   const { user, isPending } = useCurrentUserState();
   if (isPending) {
-    return <div className="hidden h-8 w-24 animate-pulse rounded-sm bg-current/10 md:block" />;
+    return <div className="h-8 w-16 animate-pulse rounded-sm bg-current/10" />;
   }
   if (user) {
     return (
-      <div className="hidden items-center gap-3 md:flex">
-        <Link to="/portalen" className="text-sm font-semibold hover:text-bright">
-          Mijn Matchdesk
-        </Link>
-        <Link to="/rapport" className="text-sm font-semibold hover:text-bright">
-          Rapport
-        </Link>
+      <div className="flex items-center gap-3">
         {isOwner(user) ? (
-          <Link to="/beheer" className="text-sm font-semibold text-bright hover:text-bright">
+          <Link to="/beheer" className="text-sm font-semibold text-bright">
             Beheer
           </Link>
-        ) : null}
+        ) : (
+          <Link to="/portalen" className="hidden text-sm font-semibold hover:text-bright sm:inline">
+            Mijn Matchdesk
+          </Link>
+        )}
         <UserButton />
       </div>
     );
   }
   return (
-    <Link to="/login" search={{ mode: "inloggen" }} className="hidden text-sm font-semibold md:inline hover:text-bright">
+    <Link to="/login" search={{ mode: "inloggen" }} className="text-sm font-semibold hover:text-bright">
       Inloggen
     </Link>
   );
