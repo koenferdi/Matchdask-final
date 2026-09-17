@@ -14,6 +14,8 @@ curl -fsSL "$BASE/src/lib/store.ts" -o src/lib/store.ts
 curl -fsSL "$BASE/src/routes/login.tsx" -o src/routes/login.tsx
 curl -fsSL "$BASE/src/routes/beheer.tsx" -o src/routes/beheer.tsx
 curl -fsSL "$BASE/src/components/site-shell.tsx" -o src/components/site-shell.tsx
+curl -fsSL "$BASE/src/components/cinema-hero.tsx" -o src/components/cinema-hero.tsx
+curl -fsSL "$BASE/src/styles.css" -o src/styles.css
 grep -q VITE_NATIVE_GOOGLE /etc/matchdesk.env 2>/dev/null || echo 'VITE_NATIVE_GOOGLE=true' >> /etc/matchdesk.env
 grep -q '^BETTER_AUTH_URL=' /etc/matchdesk.env 2>/dev/null || echo 'BETTER_AUTH_URL=https://www.getmatchdesk.nl' >> /etc/matchdesk.env
 sed -i 's|^BETTER_AUTH_URL=$|BETTER_AUTH_URL=https://www.getmatchdesk.nl|' /etc/matchdesk.env || true
