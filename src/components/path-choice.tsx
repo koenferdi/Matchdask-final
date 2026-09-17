@@ -22,7 +22,7 @@ export const PATHS = [
     key: "bedrijf",
     kicker: "BEDRIJF",
     title: "Ik installeer",
-    body: "Keuring, badge en 1:1-aanvragen in jouw postcodes. Geen veiling.",
+    body: "Gratis aanmelden. 1:1-aanvragen in jouw postcodes. Geen veiling.",
   },
 ] as const;
 

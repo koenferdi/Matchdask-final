@@ -27,8 +27,8 @@ function ExclusiefPage() {
   return (
     <main className="bg-paper py-16 text-ink">
       <Wrap className="max-w-3xl">
-        <PageIntro kicker="Exclusief-proof · €149" title="Keuring. Daarna pas een badge.">
-          Betalen zet je niet automatisch op de site. Koen laat toe — of niet. Alleen Actieve bedrijven staan op de publieke lijst.
+        <PageIntro kicker="Optioneel · Exclusief-proof · €149" title="Een badge. Geen toegangskaartje.">
+          Aanmelden als bedrijf is gratis. Dit bedrag is alleen voor de keuring van de publieke badge. Betalen zet je niet live. Koen laat toe — of niet.
         </PageIntro>
 
         <div className="mb-10 flex flex-wrap items-center gap-6 rounded-lg border border-line bg-night p-6 text-paper">
@@ -49,10 +49,10 @@ function ExclusiefPage() {
         ) : null}
 
         <ol className="space-y-5">
-          <li><strong>1. Aanmelden.</strong> KvK, prefixen, vak. Status Te beoordelen — onzichtbaar.</li>
-          <li><strong>2. Keuring betalen (€149).</strong> Check, geen leadpakket.</li>
+          <li><strong>1. Eerst aanmelden — gratis.</strong> KvK, prefixen, vak. Geen betaling nodig.</li>
+          <li><strong>2. Optioneel: keuring €149.</strong> Alleen als je de badge wilt. Geen leadpakket.</li>
           <li><strong>3. Koen beoordeelt.</strong> Actief, pauze of afwijzen. Nooit automatisch.</li>
-          <li><strong>4. Bij Actief:</strong> naam op de lijst. Met keuring: badge. 1:1-aanvragen in jouw gebied. Geen volume-garantie.</li>
+          <li><strong>4. Bij Actief:</strong> 1:1-aanvragen. Badge alleen als de keuring is betaald én je bent toegelaten.</li>
         </ol>
 
         <ul className="mt-8 space-y-2 text-sm">
@@ -62,20 +62,20 @@ function ExclusiefPage() {
         </ul>
 
         <div className="mt-8 flex flex-wrap gap-3">
+          <Button asChild>
+            <Link to="/aanmelden">Eerst gratis aanmelden</Link>
+          </Button>
           {!unlocked ? (
-            <Button asChild>
-              <a href={STRIPE.exclusief}>Claim early-bird €149</a>
+            <Button asChild variant="ghost">
+              <a href={STRIPE.exclusief}>Optioneel: keuring €149</a>
             </Button>
           ) : (
-            <Button asChild>
+            <Button asChild variant="ghost">
               <Link to="/bedrijf">Naar bedrijfsportaal</Link>
             </Button>
           )}
           <Button asChild variant="ghost">
             <Link to="/voorbeeld-badge">Voorbeeld van het pakket</Link>
-          </Button>
-          <Button asChild variant="ghost">
-            <Link to="/aanmelden">Bedrijf aanmelden</Link>
           </Button>
           <Button asChild variant="ghost">
             <a href={CONTACT.whatsapp} target="_blank" rel="noreferrer">WhatsApp</a>
