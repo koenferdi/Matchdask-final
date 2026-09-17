@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { LOGIN_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
+import { isOwnerEmail } from "@/lib/owner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
@@ -85,7 +86,8 @@ export function AuthForm({
         if (err) throw new Error(err.message || "Inloggen lukte niet. Controleer e-mail en wachtwoord.");
       }
       await authClient.getSession();
-      if (dest === "/bedrijf") await navigate({ to: "/bedrijf" });
+      if (isOwnerEmail(email)) await navigate({ to: "/beheer" });
+      else if (dest === "/bedrijf") await navigate({ to: "/bedrijf" });
       else if (dest === "/portalen") await navigate({ to: "/portalen" });
       else await navigate({ to: "/klant" });
     } catch (err) {
@@ -130,7 +132,7 @@ export function AuthForm({
               type="button"
               onClick={() => {
                 rememberRole(role);
-                void signIn(p.providerId, { callbackURL: dest });
+                void signIn(p.providerId, { callbackURL: "/portalen" });
               }}
               className="w-full rounded-sm border border-line px-4 py-3 text-sm font-semibold hover:border-teal hover:bg-paper"
             >

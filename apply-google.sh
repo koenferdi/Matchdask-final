@@ -8,6 +8,9 @@ curl -fsSL "$BASE/src/lib/auth/client.ts" -o src/lib/auth/client.ts
 curl -fsSL "$BASE/src/lib/auth/providers.ts" -o src/lib/auth/providers.ts
 curl -fsSL "$BASE/src/lib/auth/gates.tsx" -o src/lib/auth/gates.tsx
 curl -fsSL "$BASE/src/components/auth-form.tsx" -o src/components/auth-form.tsx
+curl -fsSL "$BASE/src/lib/owner.ts" -o src/lib/owner.ts
+curl -fsSL "$BASE/src/routes/login.tsx" -o src/routes/login.tsx
+curl -fsSL "$BASE/src/components/site-shell.tsx" -o src/components/site-shell.tsx
 grep -q VITE_NATIVE_GOOGLE /etc/matchdesk.env 2>/dev/null || echo 'VITE_NATIVE_GOOGLE=true' >> /etc/matchdesk.env
 grep -q '^BETTER_AUTH_URL=' /etc/matchdesk.env 2>/dev/null || echo 'BETTER_AUTH_URL=https://www.getmatchdesk.nl' >> /etc/matchdesk.env
 sed -i 's|^BETTER_AUTH_URL=$|BETTER_AUTH_URL=https://www.getmatchdesk.nl|' /etc/matchdesk.env || true
