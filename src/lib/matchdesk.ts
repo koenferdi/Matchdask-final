@@ -26,7 +26,7 @@ export const STAGES = [
 export type Stage = (typeof STAGES)[number];
 
 export const STRIPE = {
-  woningscan: "https://buy.stripe.com/7sY6oIdRt1l80Dv22Ta7C02",
+  woningscan: "https://buy.stripe.com/7sY00kbJl3tg9a1fTJa7C00",
   exclusief: "https://buy.stripe.com/4gMaEY4gTfbY71TcHxa7C01",
 } as const;
 
@@ -81,6 +81,7 @@ export type Partner = {
   status: "Te beoordelen" | "Actief" | "Gepauzeerd" | "Gearchiveerd";
   quality: number;
   example?: boolean;
+  exclusivePaid?: boolean;
 };
 
 export type Subscriber = {
@@ -111,6 +112,7 @@ type Workspace = {
   notes?: AdminNote[];
   activeLeadId?: string;
   reportPaid?: boolean;
+  exclusivePaid?: boolean;
   siteNotice?: string;
   matchingPaused?: boolean;
 };
@@ -155,7 +157,7 @@ export const SEED_PARTNERS: Partner[] = [
 ];
 
 function emptyWorkspace(): Workspace {
-  return { leads: [], partners: SEED_PARTNERS, subscribers: [], notes: [] };
+  return { leads: [], partners: [], subscribers: [], notes: [] };
 }
 
 export function loadWorkspace(): Workspace {
@@ -165,12 +167,13 @@ export function loadWorkspace(): Workspace {
     if (!raw) return emptyWorkspace();
     const parsed = JSON.parse(raw) as Workspace;
     return {
-      leads: parsed.leads ?? [],
-      partners: parsed.partners?.length ? parsed.partners : SEED_PARTNERS,
-      subscribers: parsed.subscribers ?? [],
-      notes: parsed.notes ?? [],
+      leads: Array.isArray(parsed.leads) ? parsed.leads : [],
+      partners: Array.isArray(parsed.partners) ? parsed.partners : [],
+      subscribers: Array.isArray(parsed.subscribers) ? parsed.subscribers : [],
+      notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       activeLeadId: parsed.activeLeadId,
       reportPaid: parsed.reportPaid,
+      exclusivePaid: parsed.exclusivePaid,
       siteNotice: parsed.siteNotice ?? "",
       matchingPaused: Boolean(parsed.matchingPaused),
     };

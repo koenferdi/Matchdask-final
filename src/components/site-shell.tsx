@@ -128,6 +128,7 @@ export function SiteShell() {
           <FooterCol title="Voor jouw woning">
             <Link to="/aanvragen">Vind een installateur</Link>
             <Link to="/wachtlijst">Gratis woningscan</Link>
+            <Link to="/rapport">Mijn woningrapport</Link>
             <Link to="/klant">Mijn project</Link>
             <Link to="/klant/afspraken">Afspraak maken</Link>
             <Link to="/tools">Slimme tools</Link>
@@ -135,8 +136,9 @@ export function SiteShell() {
             <Link to="/nieuwsbrief">Nieuwsbrief</Link>
           </FooterCol>
           <FooterCol title="Voor jouw bedrijf">
-            <Link to="/installateurs">Partner worden</Link>
-            <Link to="/wachtlijst">Exclusief-proof · early-bird €149</Link>
+            <Link to="/installateurs">Geverifieerde installateurs</Link>
+            <Link to="/exclusief">Exclusief-proof · €149</Link>
+            <Link to="/wachtlijst">Woningscan of early-bird</Link>
             <Link to="/aanmelden">Bedrijf aanmelden</Link>
             <Link to="/bedrijf">Bedrijfsportaal</Link>
           </FooterCol>

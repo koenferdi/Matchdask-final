@@ -8,7 +8,6 @@ import {
   saveWorkspace,
   newId,
   findPartnerFor,
-  SEED_PARTNERS,
   type Subscriber,
   type AdminNote,
   type RoofType,
@@ -63,6 +62,7 @@ type Store = {
   notes: AdminNote[];
   activeLeadId?: string;
   reportPaid: boolean;
+  exclusivePaid: boolean;
   siteNotice: string;
   matchingPaused: boolean;
   draft: Draft;
@@ -87,6 +87,8 @@ type Store = {
   setSiteNotice: (notice: string) => void;
   setMatchingPaused: (paused: boolean) => void;
   markReportPaid: () => void;
+  markExclusivePaid: () => void;
+  setPartnerExclusive: (id: string, paid: boolean) => void;
   subscribe: (email: string, name: string) => void;
 };
 
@@ -99,34 +101,93 @@ function persistNow(get: () => Store) {
     notes: s.notes,
     activeLeadId: s.activeLeadId,
     reportPaid: s.reportPaid,
+    exclusivePaid: s.exclusivePaid,
     siteNotice: s.siteNotice,
     matchingPaused: s.matchingPaused,
   });
+  if (typeof window !== "undefined") {
+    void fetch("/api/workspace", {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        leads: s.leads,
+        partners: s.partners,
+        subscribers: s.subscribers,
+        notes: s.notes,
+        activeLeadId: s.activeLeadId,
+        reportPaid: s.reportPaid,
+        exclusivePaid: s.exclusivePaid,
+        siteNotice: s.siteNotice,
+        matchingPaused: s.matchingPaused,
+      }),
+    }).catch(() => {});
+  }
 }
 
 export const useMatchdesk = create<Store>((set, get) => ({
   ready: false,
   leads: [],
-  partners: SEED_PARTNERS,
+  partners: [],
   subscribers: [],
   notes: [],
   reportPaid: false,
+  exclusivePaid: false,
   siteNotice: "",
   matchingPaused: false,
   draft: emptyDraft(),
   hydrate: () => {
-    const ws = loadWorkspace();
+    const local = loadWorkspace();
     set({
       ready: true,
-      leads: ws.leads,
-      partners: ws.partners,
-      subscribers: ws.subscribers,
-      notes: ws.notes ?? [],
-      activeLeadId: ws.activeLeadId,
-      reportPaid: Boolean(ws.reportPaid),
-      siteNotice: ws.siteNotice ?? "",
-      matchingPaused: Boolean(ws.matchingPaused),
+      leads: local.leads,
+      partners: local.partners,
+      subscribers: local.subscribers,
+      notes: local.notes ?? [],
+      activeLeadId: local.activeLeadId,
+      reportPaid: Boolean(local.reportPaid),
+      exclusivePaid: Boolean(local.exclusivePaid),
+      siteNotice: local.siteNotice ?? "",
+      matchingPaused: Boolean(local.matchingPaused),
     });
+    if (typeof window === "undefined") return;
+    void fetch("/api/workspace", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { full?: boolean; workspace?: ReturnType<typeof loadWorkspace> } | null) => {
+        if (!data?.workspace) return;
+        const remote = data.workspace;
+        if (data.full) {
+          set({
+            leads: remote.leads ?? [],
+            partners: Array.isArray(remote.partners) ? remote.partners : [],
+            subscribers: remote.subscribers ?? [],
+            notes: remote.notes ?? [],
+            activeLeadId: remote.activeLeadId,
+            reportPaid: Boolean(remote.reportPaid),
+            exclusivePaid: Boolean(remote.exclusivePaid),
+            siteNotice: remote.siteNotice ?? "",
+            matchingPaused: Boolean(remote.matchingPaused),
+          });
+          saveWorkspace({
+            leads: remote.leads ?? [],
+            partners: Array.isArray(remote.partners) ? remote.partners : [],
+            subscribers: remote.subscribers ?? [],
+            notes: remote.notes ?? [],
+            activeLeadId: remote.activeLeadId,
+            reportPaid: remote.reportPaid,
+            exclusivePaid: remote.exclusivePaid,
+            siteNotice: remote.siteNotice,
+            matchingPaused: remote.matchingPaused,
+          });
+          return;
+        }
+        set((s) => ({
+          partners: remote.partners?.length ? remote.partners : s.partners,
+          siteNotice: remote.siteNotice ?? s.siteNotice,
+          matchingPaused: Boolean(remote.matchingPaused),
+        }));
+      })
+      .catch(() => {});
   },
   persist: () => persistNow(get),
   setDraft: (patch) => set((s) => ({ draft: { ...s.draft, ...patch } })),
@@ -263,6 +324,17 @@ export const useMatchdesk = create<Store>((set, get) => ({
   },
   markReportPaid: () => {
     set({ reportPaid: true });
+    persistNow(get);
+  },
+  markExclusivePaid: () => {
+    set((s) => ({
+      exclusivePaid: true,
+      partners: s.partners.map((p, i) => (i === 0 || p.exclusivePaid ? { ...p, exclusivePaid: true } : p)),
+    }));
+    persistNow(get);
+  },
+  setPartnerExclusive: (id, paid) => {
+    set((s) => ({ partners: s.partners.map((p) => (p.id === id ? { ...p, exclusivePaid: paid } : p)) }));
     persistNow(get);
   },
   subscribe: (email, name) => {

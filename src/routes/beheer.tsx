@@ -240,7 +240,7 @@ function Aanvragen() {
 }
 
 function Installateurs() {
-  const { partners, setPartnerStatus, deletePartner, submitPartner } = useMatchdesk();
+  const { partners, setPartnerStatus, deletePartner, submitPartner, setPartnerExclusive } = useMatchdesk();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -319,7 +319,15 @@ function Installateurs() {
                 Verwijder
               </button>
             </div>
-            {p.example ? <p className="mt-2 text-xs text-muted">Voorbeeldbedrijf</p> : null}
+            {p.example ? <p className="mt-2 text-xs text-muted">Voorbeeldbedrijf — niet zichtbaar op de publieke lijst</p> : null}
+            <label className="mt-3 flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={Boolean(p.exclusivePaid)}
+                onChange={(e) => setPartnerExclusive(p.id, e.target.checked)}
+              />
+              Exclusief-proof betaald
+            </label>
           </article>
         ))}
       </div>
@@ -432,6 +440,15 @@ function Website() {
             <a href={STRIPE.exclusief} target="_blank" rel="noreferrer">
               Stripe early-bird
             </a>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <Link to="/rapport">Rapportpagina</Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <Link to="/exclusief">Exclusief-proof</Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <Link to="/installateurs">Publieke lijst</Link>
           </Button>
         </div>
       </section>

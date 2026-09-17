@@ -4,22 +4,43 @@ set -euo pipefail
 APP=/opt/matchdesk
 BASE=https://raw.githubusercontent.com/koenferdi/Matchdask-final/main
 cd "$APP"
-curl -fsSL "$BASE/src/components/cinema-hero.tsx" -o src/components/cinema-hero.tsx
-curl -fsSL "$BASE/src/styles.css" -o src/styles.css
-curl -fsSL "$BASE/src/routes/index.tsx" -o src/routes/index.tsx
-curl -fsSL "$BASE/src/components/auth-form.tsx" -o src/components/auth-form.tsx
-curl -fsSL "$BASE/src/routes/aanvragen.tsx" -o src/routes/aanvragen.tsx
-curl -fsSL "$BASE/src/routes/rapport.tsx" -o src/routes/rapport.tsx
-curl -fsSL "$BASE/src/lib/matchdesk.ts" -o src/lib/matchdesk.ts
-curl -fsSL "$BASE/src/lib/store.ts" -o src/lib/store.ts
+mkdir -p src/routes/api src/lib src/components /opt/matchdesk/data
+files=(
+  src/components/cinema-hero.tsx
+  src/components/auth-form.tsx
+  src/components/site-shell.tsx
+  src/styles.css
+  src/lib/matchdesk.ts
+  src/lib/store.ts
+  src/lib/blog.ts
+  src/lib/workspace-file.ts
+  src/routes/index.tsx
+  src/routes/aanvragen.tsx
+  src/routes/rapport.tsx
+  src/routes/exclusief.tsx
+  src/routes/installateurs.tsx
+  src/routes/aanmelden.tsx
+  src/routes/wachtlijst.tsx
+  src/routes/klant.tsx
+  src/routes/beheer.tsx
+  src/routes/privacy.tsx
+  src/routes/cookies.tsx
+  src/routes/api/workspace.ts
+)
+for f in "${files[@]}"; do
+  echo "sync $f"
+  curl -fsSL "$BASE/$f" -o "$f"
+done
+chown -R www-data:www-data /opt/matchdesk/data 2>/dev/null || chmod 777 /opt/matchdesk/data
 set -a
 # shellcheck disable=SC1091
 . /etc/matchdesk.env
 set +a
 export MATCHDESK_VPS=1 VITE_AUTH_ENABLED=true VITE_NATIVE_GOOGLE=true
 export BETTER_AUTH_URL="${BETTER_AUTH_URL:-https://www.getmatchdesk.nl}"
+export MATCHDESK_DATA=/opt/matchdesk/data
+grep -q '^MATCHDESK_DATA=' /etc/matchdesk.env 2>/dev/null || echo 'MATCHDESK_DATA=/opt/matchdesk/data' >> /etc/matchdesk.env
 NODE_OPTIONS=--max-old-space-size=1536 npm run build
-# keep media in the new public output
 mkdir -p .output/public/higgsfield
 cp -f public/higgsfield/* .output/public/higgsfield/ 2>/dev/null || true
 cp -f public/home.webp .output/public/home.webp 2>/dev/null || true
