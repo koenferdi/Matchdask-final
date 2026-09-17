@@ -9,7 +9,7 @@ export const Route = createFileRoute("/voor-bedrijven")({ component: BedrijvenPa
 
 function BedrijvenPage() {
   return (
-    <main className="bg-night text-paper">
+    <main className="path-enter bg-night text-paper">
       <PathChoice current="/voor-bedrijven" />
       <section className="py-20">
         <Wrap className="grid items-center gap-10 lg:grid-cols-[1.2fr_auto]">

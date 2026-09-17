@@ -8,7 +8,7 @@ export const Route = createFileRoute("/woning")({ component: WoningPage });
 
 function WoningPage() {
   return (
-    <main className="bg-night text-paper">
+    <main className="path-enter bg-night text-paper">
       <PathChoice current="/woning" />
       <section className="py-20">
         <Wrap className="max-w-3xl">

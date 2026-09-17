@@ -4,7 +4,7 @@ import { ArrowRight, Plus } from "lucide-react";
 import { Wrap } from "@/components/site-shell";
 import { CinemaHero, HomeScrollReveal } from "@/components/cinema-hero";
 import { DemoPortal } from "@/components/demo-portal";
-import { PathChoice } from "@/components/path-choice";
+import { PathChoice, PathGate } from "@/components/path-choice";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { CONTACT, kwh } from "@/lib/matchdesk";
 import { ARTICLES } from "@/lib/blog";
@@ -59,14 +59,19 @@ const FAQ = [
 
 function Home() {
   const [step, setStep] = useState(0);
+  const [gate, setGate] = useState(true);
   const [use, setUse] = useState(3500);
   const [solar, setSolar] = useState(3000);
   const [share, setShare] = useState(30);
   const direct = Math.round((solar * share) / 100);
   const fromGrid = Math.max(0, use - direct);
 
+  if (gate) {
+    return <PathGate onStay={() => setGate(false)} />;
+  }
+
   return (
-    <main className="bg-night text-paper">
+    <main className="home-reveal path-enter bg-night text-paper">
       <HomeScrollReveal />
       <CinemaHero />
       <PathChoice current="/" />
