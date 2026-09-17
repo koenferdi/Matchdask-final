@@ -65,6 +65,7 @@ type Store = {
   exclusivePaid: boolean;
   siteNotice: string;
   matchingPaused: boolean;
+  serverOwner: boolean | null;
   draft: Draft;
   hydrate: () => void;
   persist: () => void;
@@ -92,7 +93,7 @@ type Store = {
   subscribe: (email: string, name: string) => void;
 };
 
-function persistNow(get: () => Store) {
+function persistNow(get: () => Store, set: (patch: Partial<Store>) => void) {
   const s = get();
   saveWorkspace({
     leads: s.leads,
@@ -121,7 +122,11 @@ function persistNow(get: () => Store) {
         siteNotice: s.siteNotice,
         matchingPaused: s.matchingPaused,
       }),
-    }).catch(() => {});
+    }).then((r) => (r.ok ? r.json() : null))
+      .then((data: { full?: boolean } | null) => {
+        if (data && typeof data.full === "boolean") set({ serverOwner: data.full });
+      })
+      .catch(() => {});
   }
 }
 
@@ -135,6 +140,7 @@ export const useMatchdesk = create<Store>((set, get) => ({
   exclusivePaid: false,
   siteNotice: "",
   matchingPaused: false,
+  serverOwner: null,
   draft: emptyDraft(),
   hydrate: () => {
     const local = loadWorkspace();
@@ -167,6 +173,7 @@ export const useMatchdesk = create<Store>((set, get) => ({
             exclusivePaid: Boolean(remote.exclusivePaid),
             siteNotice: remote.siteNotice ?? "",
             matchingPaused: Boolean(remote.matchingPaused),
+            serverOwner: true,
           });
           saveWorkspace({
             leads: remote.leads ?? [],
@@ -182,14 +189,15 @@ export const useMatchdesk = create<Store>((set, get) => ({
           return;
         }
         set((s) => ({
-          partners: remote.partners?.length ? remote.partners : s.partners,
+          serverOwner: false,
           siteNotice: remote.siteNotice ?? s.siteNotice,
           matchingPaused: Boolean(remote.matchingPaused),
+          partners: s.partners.length ? s.partners : remote.partners ?? [],
         }));
       })
       .catch(() => {});
   },
-  persist: () => persistNow(get),
+  persist: () => persistNow(get, set),
   setDraft: (patch) => set((s) => ({ draft: { ...s.draft, ...patch } })),
   resetDraft: () => set({ draft: emptyDraft() }),
   submitLead: () => {
@@ -216,12 +224,12 @@ export const useMatchdesk = create<Store>((set, get) => ({
       note: d.note.trim() || undefined,
     };
     set((s) => ({ leads: [lead, ...s.leads], activeLeadId: lead.id }));
-    persistNow(get);
+    persistNow(get, set);
     return lead;
   },
   patchLead: (id, patch) => {
     set((s) => ({ leads: s.leads.map((l) => (l.id === id ? { ...l, ...patch } : l)) }));
-    persistNow(get);
+    persistNow(get, set);
   },
   requestMatch: (leadId) => {
     const { leads, partners } = get();
@@ -235,7 +243,7 @@ export const useMatchdesk = create<Store>((set, get) => ({
           : l,
       ),
     }));
-    persistNow(get);
+    persistNow(get, set);
   },
   bookAppointment: (leadId, date, time) => {
     set((s) => ({
@@ -245,7 +253,7 @@ export const useMatchdesk = create<Store>((set, get) => ({
           : l,
       ),
     }));
-    persistNow(get);
+    persistNow(get, set);
   },
   cancelAppointment: (leadId) => {
     set((s) => ({
@@ -255,7 +263,7 @@ export const useMatchdesk = create<Store>((set, get) => ({
           : l,
       ),
     }));
-    persistNow(get);
+    persistNow(get, set);
   },
   confirmAppointment: (leadId) => {
     set((s) => ({
@@ -265,7 +273,7 @@ export const useMatchdesk = create<Store>((set, get) => ({
           : l,
       ),
     }));
-    persistNow(get);
+    persistNow(get, set);
   },
   submitPartner: (partner) => {
     const next: Partner = {
@@ -275,32 +283,32 @@ export const useMatchdesk = create<Store>((set, get) => ({
       quality: 0,
     };
     set((s) => ({ partners: [next, ...s.partners] }));
-    persistNow(get);
+    persistNow(get, set);
     return next;
   },
   setPartnerStatus: (id, status) => {
     set((s) => ({
       partners: s.partners.map((p) => (p.id === id ? { ...p, status } : p)),
     }));
-    persistNow(get);
+    persistNow(get, set);
   },
   setLeadStatus: (id, status) => {
     set((s) => ({
       leads: s.leads.map((l) => (l.id === id ? { ...l, status } : l)),
     }));
-    persistNow(get);
+    persistNow(get, set);
   },
   deleteLead: (id) => {
     set((s) => ({ leads: s.leads.filter((l) => l.id !== id) }));
-    persistNow(get);
+    persistNow(get, set);
   },
   deletePartner: (id) => {
     set((s) => ({ partners: s.partners.filter((p) => p.id !== id) }));
-    persistNow(get);
+    persistNow(get, set);
   },
   deleteSubscriber: (email) => {
     set((s) => ({ subscribers: s.subscribers.filter((x) => x.email !== email) }));
-    persistNow(get);
+    persistNow(get, set);
   },
   addNote: (text) => {
     const clean = text.trim();
@@ -308,31 +316,31 @@ export const useMatchdesk = create<Store>((set, get) => ({
     set((s) => ({
       notes: [{ id: newId("N"), text: clean, createdAt: new Date().toISOString() }, ...s.notes],
     }));
-    persistNow(get);
+    persistNow(get, set);
   },
   deleteNote: (id) => {
     set((s) => ({ notes: s.notes.filter((n) => n.id !== id) }));
-    persistNow(get);
+    persistNow(get, set);
   },
   setSiteNotice: (notice) => {
     set({ siteNotice: notice });
-    persistNow(get);
+    persistNow(get, set);
   },
   setMatchingPaused: (paused) => {
     set({ matchingPaused: paused });
-    persistNow(get);
+    persistNow(get, set);
   },
   markReportPaid: () => {
     set({ reportPaid: true });
-    persistNow(get);
+    persistNow(get, set);
   },
   markExclusivePaid: () => {
     set({ exclusivePaid: true });
-    persistNow(get);
+    persistNow(get, set);
   },
   setPartnerExclusive: (id, paid) => {
     set((s) => ({ partners: s.partners.map((p) => (p.id === id ? { ...p, exclusivePaid: paid } : p)) }));
-    persistNow(get);
+    persistNow(get, set);
   },
   subscribe: (email, name) => {
     const clean = email.trim().toLowerCase();
@@ -346,6 +354,6 @@ export const useMatchdesk = create<Store>((set, get) => ({
         ],
       };
     });
-    persistNow(get);
+    persistNow(get, set);
   },
 }));

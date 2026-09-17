@@ -5,6 +5,7 @@ const OWNER_EMAILS = new Set([
   "koenferdi@gmail.com",
   "koen@getmatchdesk.nl",
   "koen.ferdi@gmail.com",
+  "koeen.033@live.nl",
 ]);
 
 export function isOwnerEmail(email?: string | null) {

@@ -75,6 +75,16 @@ function Beheer() {
         <PageIntro kicker="Beheer · alleen jij" title="Volledige controle.">
           Aanvragen, partners, nieuwsbrief, website-status en notities. Klanten en installateurs zien dit niet.
         </PageIntro>
+        {data.serverOwner === false ? (
+          <p className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            De server herkent dit inlog niet als eigenaar. Verwijderen van bedrijven blijft dan niet bewaard.
+            Log in met info@getmatchdesk.nl of koenferdi@gmail.com, of gebruik het Google-account dat bij Matchdesk hoort.
+          </p>
+        ) : data.serverOwner === true ? (
+          <p className="mb-6 rounded-md border border-line bg-mint/20 px-4 py-3 text-sm">
+            Wijzigingen worden op de server bewaard. Verwijderde bedrijven komen niet terug.
+          </p>
+        ) : null}
         <div className="mb-8 flex flex-wrap gap-2">
           {tabs.map((t) => (
             <button
