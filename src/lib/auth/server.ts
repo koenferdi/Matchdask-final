@@ -66,9 +66,14 @@ function previewAuthSecret(): string {
 
 /** Read an env var, treating empty/whitespace as unset. */
 const env = (key: string): string | undefined => {
-  const value = process.env[key]?.trim();
+  const bag = process.env as Record<string, string | undefined>;
+  // Dynamic key so Nitro/Vite cannot inline an empty value at build time.
+  const value = bag[key]?.trim();
   return value ? value : undefined;
 };
+
+const googleClientId = env(["GOOGLE", "CLIENT", "ID"].join("_"));
+const googleClientSecret = env(["GOOGLE", "CLIENT", "SECRET"].join("_"));
 
 // Explicit off-switch. The deployer sets `VITE_AUTH_ENABLED=true` when it
 // provisions auth; set it to "false" to force auth off everywhere (dev user).
@@ -153,7 +158,7 @@ export const SESSION_TOKEN_COOKIE = "__Host-grok-auth.session_token";
 
 // Built separately so the `betterAuth({...})` call stays easy to edit without
 // breaking brackets (models often trip on the conditional plugin spread).
-const grokOAuthPlugin = authConfigured && !env("GOOGLE_CLIENT_ID")
+const grokOAuthPlugin = authConfigured && !googleClientId
   ? genericOAuth({
       config: GROK_PROVIDERS.map(({ providerId, idp }) => ({
         providerId,
@@ -217,13 +222,12 @@ export const auth = betterAuth({
   // Local email/password — toggled only via `./email-password` (not a plugin).
   ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
 
-  ...(env("GOOGLE_CLIENT_ID") && env("GOOGLE_CLIENT_SECRET")
+  ...(googleClientId && googleClientSecret
     ? {
         socialProviders: {
           google: {
-            clientId: env("GOOGLE_CLIENT_ID") as string,
-            clientSecret: env("GOOGLE_CLIENT_SECRET") as string,
-            prompt: "select_account" as const,
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
           },
         },
       }
