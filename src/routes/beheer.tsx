@@ -281,8 +281,6 @@ function Aanvragen() {
   );
 }
 
-}
-
 function Keuring() {
   const { partners, setPartnerStatus, setPartnerExclusive } = useMatchdesk();
   const queue = partners.filter((p) => !p.example && (p.status === "Te beoordelen" || p.exclusivePaid));
