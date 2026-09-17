@@ -112,13 +112,14 @@
 .cinema-film {
   position: relative;
   isolation: isolate;
+  height: 185vh;
 }
 
 .cinema-stage {
-  height: calc(100svh - 7.5rem);
+  position: sticky;
+  top: 0;
+  height: 100svh;
   min-height: 36rem;
-  max-height: 54rem;
-  position: relative;
   overflow: hidden;
   background: var(--color-night);
 }
@@ -139,28 +140,8 @@
 }
 
 .cinema-poster img {
-  animation: cinema-ken 18s ease-in-out infinite alternate;
   will-change: transform;
-  transform: translateZ(0);
-}
-
-.cinema-poster img.is-still {
-  animation-play-state: paused;
-}
-
-.cinema-poster {
-  z-index: 3;
-  transition: opacity 0.5s ease;
-}
-.cinema-film.is-playing .cinema-poster {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.cinema-video {
-  z-index: 2;
-  opacity: 1;
-  pointer-events: none;
+  transform-origin: 58% 40%;
 }
 
 .cinema-scrim {
@@ -330,11 +311,11 @@ details.group[open] p {
 
 @media (max-width: 720px) {
   .cinema-film {
-    height: auto;
+    height: 160vh;
   }
   .cinema-stage {
     min-height: 34rem;
-    height: calc(100svh - 6.5rem);
+    height: 100svh;
   }
   .cinema-copy {
     justify-content: flex-end;
@@ -360,5 +341,23 @@ details.group[open] p {
   .cinema-copy > .cinema-in,
   details.group[open] p {
     animation: none !important;
+  }
+}
+
+main.bg-night > section:not(.cinema-film) {
+  opacity: 0;
+  transform: translate3d(0, 36px, 0);
+  transition: opacity 0.8s cubic-bezier(0.2, 0.6, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+main.bg-night > section:not(.cinema-film).is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main.bg-night > section:not(.cinema-film) {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

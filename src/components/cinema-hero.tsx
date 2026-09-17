@@ -1,77 +1,49 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Pause, Play } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Wrap } from "@/components/site-shell";
 import { cn } from "@/lib/cn";
 
 export function CinemaHero() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [userPaused, setUserPaused] = useState(false);
-  const [playing, setPlaying] = useState(false);
+  const pin = useRef<HTMLElement>(null);
+  const [progress, setProgress] = useState(0);
   const [reduced, setReduced] = useState(false);
-  const mobile =
-    typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
-  const src = mobile ? "/higgsfield/home-mobile.mp4" : "/higgsfield/home-desktop.mp4";
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduced(reduce.matches);
     const onReduce = () => setReduced(reduce.matches);
     reduce.addEventListener("change", onReduce);
-    return () => reduce.removeEventListener("change", onReduce);
+
+    const el = pin.current;
+    if (!el) return;
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        const total = Math.max(1, el.offsetHeight - window.innerHeight);
+        const p = Math.min(1, Math.max(0, -el.getBoundingClientRect().top / total));
+        setProgress(p);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      reduce.removeEventListener("change", onReduce);
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.setAttribute("playsinline", "true");
-    video.setAttribute("webkit-playsinline", "true");
-    video.setAttribute("muted", "");
-
-    if (reduced || userPaused) {
-      video.pause();
-      setPlaying(false);
-      return;
-    }
-
-    let cancelled = false;
-    const tryPlay = () => {
-      if (cancelled || userPaused || reduced) return;
-      video.muted = true;
-      const attempt = video.play();
-      if (attempt) {
-        attempt.then(() => { if (!cancelled) setPlaying(true); }).catch(() => {});
-      }
-    };
-
-    tryPlay();
-    video.addEventListener("canplay", tryPlay);
-    video.addEventListener("loadeddata", tryPlay);
-    video.addEventListener("playing", () => setPlaying(true));
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") tryPlay();
-    });
-    window.addEventListener("pointerdown", tryPlay);
-    window.addEventListener("touchstart", tryPlay);
-    const retry = window.setInterval(tryPlay, 800);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(retry);
-      video.removeEventListener("canplay", tryPlay);
-      video.removeEventListener("loadeddata", tryPlay);
-      window.removeEventListener("pointerdown", tryPlay);
-      window.removeEventListener("touchstart", tryPlay);
-    };
-  }, [userPaused, reduced, src]);
-
-  const still = userPaused || reduced;
+  const p = reduced ? 0 : progress;
+  const scale = 1 + p * 0.22;
+  const x = p * -3.2;
+  const y = p * -2.4;
+  const copyFade = Math.max(0, 1 - p * 1.35);
 
   return (
-    <section className={cn("cinema-film", playing && !still && "is-playing")} aria-label="Openingsbeeld">
+    <section ref={pin} className="cinema-film" aria-label="Openingsbeeld">
       <div className="cinema-stage">
         <picture className="cinema-poster">
           <source media="(max-width:720px)" srcSet="/higgsfield/home-mobile-poster.png" />
@@ -79,26 +51,11 @@ export function CinemaHero() {
             src="/higgsfield/home-desktop-poster.png"
             alt="Nederlandse woning met zonnepanelen en een thuisbatterij"
             fetchPriority="high"
-            className={cn(still && "is-still")}
+            style={{ transform: `scale(${scale}) translate3d(${x}%, ${y}%, 0)` }}
           />
         </picture>
-        {!reduced ? (
-          <div className="cinema-video" aria-hidden>
-            <video
-              ref={videoRef}
-              src={src}
-              muted
-              loop
-              playsInline
-              autoPlay
-              preload="auto"
-              poster={mobile ? "/higgsfield/home-mobile-poster.png" : "/higgsfield/home-desktop-poster.png"}
-              onPlaying={() => setPlaying(true)}
-            />
-          </div>
-        ) : null}
-        <div className="cinema-scrim" />
-        <Wrap className="cinema-copy">
+        <div className="cinema-scrim" style={{ opacity: 0.75 + p * 0.25 }} />
+        <Wrap className="cinema-copy" style={{ opacity: copyFade, transform: `translate3d(0, ${p * -28}px, 0)` }}>
           <span className="mb-6 block text-xs font-medium tracking-[0.13em] text-mint cinema-in">
             ZONNEPANELEN & THUISBATTERIJEN
           </span>
@@ -126,23 +83,30 @@ export function CinemaHero() {
             </span>
           </div>
         </Wrap>
-        <Wrap className="cinema-footer">
+        <Wrap className="cinema-footer" style={{ opacity: copyFade }}>
           <a href="#werkwijze" className="cinema-scroll">
             <i />
-            Scroll naar jouw volgende stap
+            Scroll voor de volgende stap
           </a>
-          <button
-            type="button"
-            className="cinema-pause"
-            aria-pressed={still}
-            aria-label={still ? "Beweging hervatten" : "Beweging pauzeren"}
-            onClick={() => setUserPaused((v) => !v)}
-          >
-            {still ? <Play className="size-4" /> : <Pause className="size-4" />}
-            {still ? "Beweging hervatten" : "Beweging pauzeren"}
-          </button>
         </Wrap>
       </div>
     </section>
   );
+}
+
+export function HomeScrollReveal() {
+  useEffect(() => {
+    const nodes = document.querySelectorAll<HTMLElement>("main > section:not(.cinema-film)");
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) e.target.classList.add("is-in");
+        }
+      },
+      { threshold: 0.14, rootMargin: "0px 0px -8% 0px" },
+    );
+    nodes.forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, []);
+  return null;
 }
