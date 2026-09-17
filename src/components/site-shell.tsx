@@ -157,7 +157,6 @@ export function SiteShell() {
           <FooterCol title="Voor jouw bedrijf">
             <Link to="/installateurs">Geverifieerde installateurs</Link>
             <Link to="/exclusief">Exclusief-proof · €149</Link>
-            <Link to="/wachtlijst">Woningscan of early-bird</Link>
             <Link to="/aanmelden">Bedrijf aanmelden</Link>
             <Link to="/bedrijf">Bedrijfsportaal</Link>
           </FooterCol>
@@ -166,7 +165,6 @@ export function SiteShell() {
               WhatsApp <ArrowUpRight className="size-4" />
             </a>
             <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
-            <Link to="/nieuwsbrief">Nieuwsbrief</Link>
             <span>Matchdesk · KvK {CONTACT.kvk}</span>
           </FooterCol>
         </div>
