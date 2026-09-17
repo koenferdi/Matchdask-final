@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
-import { PRODUCTS, TERMS, CONTACT, STRIPE, type Product, type Term, runScan, kwh } from "@/lib/matchdesk";
+import { PRODUCTS, TERMS, CONTACT, STRIPE, ROOF_TYPES, ROOF_DIRS, SHADES, METERS, type Product, type Term, type RoofType, type RoofDir, type Shade, type Meter, runScan, kwh } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/cn";
@@ -232,8 +232,55 @@ function Aanvragen() {
                       className="field-input"
                     />
                   </Field>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Jaarverbruik (kWh, optioneel)">
+                      <input
+                        inputMode="numeric"
+                        placeholder="bijv. 3500"
+                        value={draft.usageKwh}
+                        onChange={(e) => setDraft({ usageKwh: e.target.value.replace(/\D/g, "") })}
+                        className="field-input"
+                      />
+                    </Field>
+                    <Field label="Meterkast">
+                      <select className="field-input" value={draft.meter} onChange={(e) => setDraft({ meter: e.target.value as Meter })}>
+                        <option value="">Weet ik niet</option>
+                        {METERS.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Daktype">
+                      <select className="field-input" value={draft.roofType} onChange={(e) => setDraft({ roofType: e.target.value as RoofType })}>
+                        <option value="">Kies…</option>
+                        {ROOF_TYPES.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Meest zonnige dakvlak">
+                      <select className="field-input" value={draft.roofDir} onChange={(e) => setDraft({ roofDir: e.target.value as RoofDir })}>
+                        <option value="">Kies…</option>
+                        {ROOF_DIRS.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Schaduw op het dak">
+                      <select className="field-input" value={draft.shade} onChange={(e) => setDraft({ shade: e.target.value as Shade })}>
+                        <option value="">Kies…</option>
+                        {SHADES.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <label className="flex items-end gap-3 pb-3 text-sm">
+                      <input type="checkbox" className="accent-teal" checked={draft.hasSolar} onChange={(e) => setDraft({ hasSolar: e.target.checked })} />
+                      Er liggen al zonnepanelen
+                    </label>
+                  </div>
                   <p className="text-xs text-muted">
-                    <strong>Gratis:</strong> je basisresultaat en installateursmatch blijven zonder betaling beschikbaar.
+                    <strong>Gratis:</strong> basisresultaat en match. Deze dakgegevens gaan mee in het optionele Fit-rapport voor de installateur.
                   </p>
                 </>
               ) : null}

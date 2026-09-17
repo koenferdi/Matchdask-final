@@ -11,6 +11,7 @@ curl -fsSL "$BASE/src/components/auth-form.tsx" -o src/components/auth-form.tsx
 curl -fsSL "$BASE/src/routes/aanvragen.tsx" -o src/routes/aanvragen.tsx
 curl -fsSL "$BASE/src/routes/rapport.tsx" -o src/routes/rapport.tsx
 curl -fsSL "$BASE/src/lib/matchdesk.ts" -o src/lib/matchdesk.ts
+curl -fsSL "$BASE/src/lib/store.ts" -o src/lib/store.ts
 set -a
 # shellcheck disable=SC1091
 . /etc/matchdesk.env

@@ -36,6 +36,16 @@ export const CONTACT = {
   kvk: "88532496",
 } as const;
 
+export type RoofType = "Hellend dak" | "Plat dak" | "Deels plat / deels hellend" | "Weet ik niet";
+export type RoofDir = "Zuid" | "Zuidwest" | "Zuidoost" | "Oost" | "West" | "Noord / anders" | "Weet ik niet";
+export type Shade = "Weinig" | "Deels (dakkapel, schoorsteen, boom)" | "Veel" | "Weet ik niet";
+export type Meter = "1-fase" | "3-fase" | "Weet ik niet";
+
+export const ROOF_TYPES: RoofType[] = ["Hellend dak", "Plat dak", "Deels plat / deels hellend", "Weet ik niet"];
+export const ROOF_DIRS: RoofDir[] = ["Zuid", "Zuidwest", "Zuidoost", "Oost", "West", "Noord / anders", "Weet ik niet"];
+export const SHADES: Shade[] = ["Weinig", "Deels (dakkapel, schoorsteen, boom)", "Veel", "Weet ik niet"];
+export const METERS: Meter[] = ["1-fase", "3-fase", "Weet ik niet"];
+
 export type Lead = {
   id: string;
   product: Product;
@@ -51,6 +61,13 @@ export type Lead = {
   createdAt: string;
   partnerId?: string;
   appointment?: { date: string; time: string; status: "Aangevraagd" | "Bevestigd" | "Geannuleerd" };
+  usageKwh?: number;
+  roofType?: RoofType;
+  roofDir?: RoofDir;
+  shade?: Shade;
+  meter?: Meter;
+  hasSolar?: boolean;
+  note?: string;
 };
 
 export type Partner = {
@@ -206,35 +223,6 @@ export function findPartnerFor(lead: Pick<Lead, "product" | "postcode">, partner
   return productFit ?? active[0];
 }
 
-export function runScan(lead: Lead): ScanResult {
-  const digits = Number(lead.postcode.replace(/\D/g, "").slice(0, 4)) || 3500;
-  const solarBias = 0.82 + ((digits % 17) / 100);
-  const panels = lead.product === "Thuisbatterij" ? 0 : 8 + (digits % 8);
-  const yieldKwh = lead.product === "Thuisbatterij" ? 0 : Math.round(panels * 350 * solarBias);
-  const batteryKwh = lead.product === "Zonnepanelen" ? 0 : 5 + (digits % 6);
-  const suitability: ScanResult["suitability"] =
-    solarBias > 0.9 ? "sterk" : solarBias > 0.86 ? "kansrijk" : "nader te bekijken";
-  const region = regionLabel(lead.postcode);
-  const matchHint =
-    lead.product === "Thuisbatterij"
-      ? `In ${region} kijken we naar partners met batterij-ervaring en vrije capaciteit.`
-      : `In ${region} zoeken we één partner met dak- en netwerkaansluiting in jouw postcodegebied.`;
-  return {
-    leadId: lead.id,
-    region,
-    suitability,
-    yieldKwh,
-    panels,
-    batteryKwh,
-    matchHint,
-    nextSteps: [
-      "Bekijk je basisresultaat en bewaar het bij je aanvraag.",
-      "Vraag in het klantportaal een match aan — dan gaat je dossier naar één installateur.",
-      "Plan desgewenst een telefonisch gesprek vanuit je portaal.",
-    ],
-  };
-}
-
 export function money(n: number) {
   return new Intl.NumberFormat("nl-NL", {
     style: "currency",
@@ -245,4 +233,151 @@ export function money(n: number) {
 
 export function kwh(n: number) {
   return `${new Intl.NumberFormat("nl-NL").format(n)} kWh`;
+}
+
+export function netbeheerder(postcode: string) {
+  const n = Number(postcode.replace(/\D/g, "").slice(0, 2));
+  if (n >= 10 && n <= 19) return "Liander";
+  if (n >= 20 && n <= 29) return "Stedin";
+  if (n >= 30 && n <= 39) return "Stedin";
+  if (n >= 40 && n <= 49) return "Stedin";
+  if (n >= 50 && n <= 59) return "Enexis";
+  if (n >= 60 && n <= 69) return "Enexis";
+  if (n >= 70 && n <= 79) return "Liander";
+  if (n >= 80 && n <= 89) return "Enexis / Liander";
+  if (n >= 90) return "Enexis / Liander";
+  return "netbeheerder ter plaatse";
+}
+
+const ORIENT: Record<RoofDir, number> = {
+  Zuid: 1,
+  Zuidwest: 0.93,
+  Zuidoost: 0.93,
+  Oost: 0.78,
+  West: 0.78,
+  "Noord / anders": 0.48,
+  "Weet ik niet": 0.86,
+};
+
+const SHADE_F: Record<Shade, number> = {
+  Weinig: 1,
+  "Deels (dakkapel, schoorsteen, boom)": 0.82,
+  Veel: 0.58,
+  "Weet ik niet": 0.88,
+};
+
+export function runScan(lead: Lead): ScanResult {
+  const digits = Number(lead.postcode.replace(/\D/g, "").slice(0, 4)) || 3500;
+  const orient = ORIENT[lead.roofDir ?? "Weet ik niet"];
+  const shade = SHADE_F[lead.shade ?? "Weet ik niet"];
+  const usage = lead.usageKwh && lead.usageKwh > 400 ? lead.usageKwh : 0;
+  const panels =
+    lead.product === "Thuisbatterij"
+      ? 0
+      : usage
+        ? Math.max(6, Math.min(20, Math.round((usage * 0.85) / 350)))
+        : 8 + (digits % 8);
+  const yieldKwh =
+    lead.product === "Thuisbatterij" ? 0 : Math.round(panels * 350 * orient * shade);
+  const batteryKwh =
+    lead.product === "Zonnepanelen" ? 0 : usage ? Math.max(5, Math.min(15, Math.round(usage / 900))) : 5 + (digits % 6);
+  const suitability: ScanResult["suitability"] =
+    lead.roofDir === "Noord / anders" || lead.shade === "Veel"
+      ? "nader te bekijken"
+      : orient * shade > 0.85
+        ? "sterk"
+        : orient * shade > 0.7
+          ? "kansrijk"
+          : "nader te bekijken";
+  const region = regionLabel(lead.postcode);
+  const matchHint =
+    lead.product === "Thuisbatterij"
+      ? `In ${region} (${netbeheerder(lead.postcode)}) kijken we naar partners met batterij-ervaring en vrije capaciteit.`
+      : `In ${region} (${netbeheerder(lead.postcode)}) zoeken we één partner voor dak, omvormer en netaansluiting.`;
+  return {
+    leadId: lead.id,
+    region,
+    suitability,
+    yieldKwh,
+    panels,
+    batteryKwh,
+    matchHint,
+    nextSteps: [
+      "Dit rapport is de start — geen schouwing en geen offerte.",
+      "De installateur rekent na op jouw dak, meter en net.",
+      "Plan daarna een gesprek vanuit je portaal.",
+    ],
+  };
+}
+
+export type FitReport = {
+  scan: ScanResult;
+  operator: string;
+  installerAsk: string[];
+  risks: string[];
+  brief: string[];
+  missing: string[];
+};
+
+export function buildFitReport(lead: Lead): FitReport {
+  const scan = runScan(lead);
+  const operator = netbeheerder(lead.postcode);
+  const missing: string[] = [];
+  if (!lead.usageKwh) missing.push("jaarverbruik");
+  if (!lead.roofType || lead.roofType === "Weet ik niet") missing.push("daktype");
+  if (!lead.roofDir || lead.roofDir === "Weet ik niet") missing.push("dakrichting");
+  if (!lead.shade || lead.shade === "Weet ik niet") missing.push("schaduw");
+  if (!lead.meter || lead.meter === "Weet ik niet") missing.push("meterkast");
+
+  const installerAsk = [
+    "Foto’s van dakvlakken, meterkast en (indien aanwezig) bestaande omvormer.",
+    `Netaansluiting bij ${operator}: teruglevercapaciteit en eventuele congestie op ${lead.postcode}.`,
+    lead.meter === "1-fase"
+      ? "1-fase aansluiting: max. omvormervermogen en eventuele 3-fase upgrade."
+      : "Bevestig 1- of 3-fase en vrije groepen in de meterkast.",
+    lead.product.includes("batterij") || lead.product.includes("Batterij")
+      ? "Batterij: hybrid/AC-coupled, backup-wens, dynamisch contract."
+      : "Past het paneelveld bij het jaarverbruik, of is er overdimensionering?",
+    "Schouwing ter plaatse vóór bindende offerte (nok, ballast, kabelweg, schaduwuren).",
+  ];
+
+  const risks: string[] = [];
+  if (lead.shade === "Veel" || lead.shade?.startsWith("Deels")) {
+    risks.push("Schaduw op het dakvlak. Optimizer of herverdeling van strings is waarschijnlijk nodig.");
+  }
+  if (lead.roofDir === "Noord / anders") {
+    risks.push("Noordelijk of afwijkend dakvlak: lagere opbrengst, extra uitleg richting klant.");
+  }
+  if (lead.roofType === "Plat dak") {
+    risks.push("Plat dak: ballastframe, windzone en dakbedekking meenemen in de schouwing.");
+  }
+  if (lead.hasSolar) {
+    risks.push("Bestaande installatie: omvormer, garantie en uitbreiding vs. vervanging checken.");
+  }
+  if (lead.meter === "1-fase" && scan.panels >= 12) {
+    risks.push("Groot veld op 1-fase: begrensd vermogen of 3-fase upgrade bespreken.");
+  }
+  risks.push(`Net: ${operator} in ${scan.region}. Terugleveren is geen zekerheid — installer checkt de aansluiting.`);
+  if (lead.term === "Zo snel mogelijk") {
+    risks.push("Krappe planning: materiaallevering en netwerkmelding bepalen de startdatum, niet alleen de wens.");
+  }
+
+  const brief = [
+    `${lead.product} · ${lead.address}, ${lead.postcode} ${lead.city}`,
+    `Klant ${lead.name} · ${lead.email} · ${lead.phone}`,
+    `Termijn: ${lead.term}. Dossier ${lead.id}.`,
+    lead.usageKwh ? `Opgegeven jaarverbruik ${kwh(lead.usageKwh)}.` : "Jaarverbruik nog niet opgegeven.",
+    lead.roofType && lead.roofDir
+      ? `Dak: ${lead.roofType}, richting ${lead.roofDir}, schaduw: ${lead.shade ?? "onbekend"}.`
+      : "Dakgegevens deels onbekend — schouwing is leidend.",
+    lead.meter ? `Meterkast: ${lead.meter}.` : "Meterkast onbekend.",
+    lead.hasSolar ? "Er liggen al panelen." : "Geen bestaande panelen opgegeven.",
+    lead.product === "Thuisbatterij"
+      ? `Richtgrootte batterij ${scan.batteryKwh} kWh — ter discussie, geen bestelling.`
+      : `Richtgrootte ${scan.panels} panelen / ${kwh(scan.yieldKwh)} — postcode + dakantwoorden, geen opbrengstgarantie.`,
+    scan.matchHint,
+  ];
+  if (lead.note?.trim()) brief.push(`Toelichting klant: ${lead.note.trim()}`);
+
+  return { scan, operator, installerAsk, risks, brief, missing };
 }

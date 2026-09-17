@@ -11,6 +11,10 @@ import {
   SEED_PARTNERS,
   type Subscriber,
   type AdminNote,
+  type RoofType,
+  type RoofDir,
+  type Shade,
+  type Meter,
 } from "./matchdesk";
 
 export type Draft = {
@@ -23,6 +27,13 @@ export type Draft = {
   email: string;
   phone: string;
   consent: boolean;
+  usageKwh: string;
+  roofType: RoofType | "";
+  roofDir: RoofDir | "";
+  shade: Shade | "";
+  meter: Meter | "";
+  hasSolar: boolean;
+  note: string;
 };
 
 const emptyDraft = (): Draft => ({
@@ -35,6 +46,13 @@ const emptyDraft = (): Draft => ({
   email: "",
   phone: "",
   consent: false,
+  usageKwh: "",
+  roofType: "",
+  roofDir: "",
+  shade: "",
+  meter: "",
+  hasSolar: false,
+  note: "",
 });
 
 type Store = {
@@ -53,6 +71,7 @@ type Store = {
   setDraft: (patch: Partial<Draft>) => void;
   resetDraft: () => void;
   submitLead: () => Lead;
+  patchLead: (id: string, patch: Partial<Lead>) => void;
   requestMatch: (leadId: string) => void;
   bookAppointment: (leadId: string, date: string, time: string) => void;
   cancelAppointment: (leadId: string) => void;
@@ -127,10 +146,21 @@ export const useMatchdesk = create<Store>((set, get) => ({
       consent: d.consent,
       status: "Nieuw",
       createdAt: new Date().toISOString(),
+      usageKwh: d.usageKwh ? Number(d.usageKwh) : undefined,
+      roofType: d.roofType || undefined,
+      roofDir: d.roofDir || undefined,
+      shade: d.shade || undefined,
+      meter: d.meter || undefined,
+      hasSolar: d.hasSolar,
+      note: d.note.trim() || undefined,
     };
     set((s) => ({ leads: [lead, ...s.leads], activeLeadId: lead.id }));
     persistNow(get);
     return lead;
+  },
+  patchLead: (id, patch) => {
+    set((s) => ({ leads: s.leads.map((l) => (l.id === id ? { ...l, ...patch } : l)) }));
+    persistNow(get);
   },
   requestMatch: (leadId) => {
     const { leads, partners } = get();
