@@ -4,6 +4,7 @@ import { ArrowRight, Plus } from "lucide-react";
 import { Wrap } from "@/components/site-shell";
 import { CinemaHero, HomeScrollReveal } from "@/components/cinema-hero";
 import { DemoPortal } from "@/components/demo-portal";
+import { PathChoice } from "@/components/path-choice";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { CONTACT, kwh } from "@/lib/matchdesk";
 import { ARTICLES } from "@/lib/blog";
@@ -68,6 +69,7 @@ function Home() {
     <main className="bg-night text-paper">
       <HomeScrollReveal />
       <CinemaHero />
+      <PathChoice current="/" />
 
       <section id="werkwijze" className="py-24">
         <Wrap className="grid gap-16 lg:grid-cols-[1fr_1fr] lg:items-start">

@@ -12,13 +12,10 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { isOwner } from "@/lib/owner";
 
 const NAV = [
-  { to: "/", hash: "oplossingen", label: "Oplossingen" },
-  { to: "/", hash: "werkwijze", label: "Zo werkt het" },
-  { to: "/rapport", label: "Woningrapport" },
-  { to: "/installateurs", label: "Installateurs" },
-  { to: "/exclusief", label: "Exclusief-proof" },
+  { to: "/", label: "Oriëntatie" },
+  { to: "/woning", label: "Voor je woning" },
+  { to: "/voor-bedrijven", label: "Voor bedrijven" },
   { to: "/blog", label: "Inzicht" },
-  { to: "/tools", label: "Slimme tools" },
 ] as const;
 
 export function SiteShell() {
@@ -27,7 +24,7 @@ export function SiteShell() {
   const { user } = useCurrentUserState();
   const owner = isOwner(user);
   const [open, setOpen] = useState(false);
-  const dark = pathname === "/";
+  const dark = pathname === "/" || pathname === "/woning" || pathname === "/voor-bedrijven";
 
   useEffect(() => {
     hydrate();
@@ -54,7 +51,6 @@ export function SiteShell() {
               <Link
                 key={item.label}
                 to={item.to}
-                hash={"hash" in item ? item.hash : undefined}
                 className={cn(
                   "transition-colors hover:text-bright",
                   "highlight" in item && item.highlight && "text-bright",
@@ -91,7 +87,6 @@ export function SiteShell() {
               <Link
                 key={item.label}
                 to={item.to}
-                hash={"hash" in item ? item.hash : undefined}
                 className="rounded-sm px-2 py-3 text-base font-semibold"
               >
                 {item.label}
@@ -145,6 +140,7 @@ export function SiteShell() {
             </p>
           </div>
           <FooterCol title="Voor jouw woning">
+            <Link to="/woning">Start voor woningeigenaren</Link>
             <Link to="/aanvragen">Vind een installateur</Link>
             <Link to="/wachtlijst">Gratis woningscan</Link>
             <Link to="/rapport">Mijn woningrapport</Link>
@@ -156,6 +152,7 @@ export function SiteShell() {
             <Link to="/nieuwsbrief">Nieuwsbrief</Link>
           </FooterCol>
           <FooterCol title="Voor jouw bedrijf">
+            <Link to="/voor-bedrijven">Start voor installateurs</Link>
             <Link to="/installateurs">Geverifieerde installateurs</Link>
             <Link to="/exclusief">Exclusief-proof · €149</Link>
             <Link to="/exclusief/voorbeeld">Badge-pakket</Link>

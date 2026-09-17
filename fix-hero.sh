@@ -10,6 +10,7 @@ files=(
   src/components/auth-form.tsx
   src/components/site-shell.tsx
   src/components/demo-portal.tsx
+  src/components/path-choice.tsx
   src/components/proof-badge.tsx
   src/components/fit-document.tsx
   src/styles.css
@@ -25,6 +26,8 @@ files=(
   src/routes/rapport.voorbeeld.tsx
   src/routes/exclusief.tsx
   src/routes/exclusief.voorbeeld.tsx
+  src/routes/woning.tsx
+  src/routes/voor-bedrijven.tsx
   src/routes/installateurs.tsx
   src/routes/aanmelden.tsx
   src/routes/wachtlijst.tsx
