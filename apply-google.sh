@@ -32,7 +32,17 @@ Environment=VITE_AUTH_ENABLED=true
 OVR
 systemctl daemon-reload
 NODE_OPTIONS=--max-old-space-size=1536 npm run build
+# Force production origin in the built server (Nitro otherwise keeps localhost:8080)
+find .output/server -type f \( -name '*.mjs' -o -name '*.js' \) -print0 \
+  | xargs -0 grep -l 'localhost:8080' \
+  | xargs -r sed -i 's|http://localhost:8080|https://www.getmatchdesk.nl|g'
+echo "localhost leftovers:" 
+grep -R 'localhost:8080' .output/server | head || echo none
 systemctl restart matchdesk
 sleep 2
 systemctl is-active matchdesk
+echo -n "google_redirect="
+curl -sS -m 8 -H 'content-type: application/json' -H 'origin: https://www.getmatchdesk.nl' \
+  -X POST http://127.0.0.1:3000/api/auth/sign-in/social \
+  --data '{"provider":"google","callbackURL":"/klant"}' | tr '"' '\n' | grep -E 'redirect_uri|localhost|getmatchdesk' | head
 echo GOOGLE_PATCH_DONE
