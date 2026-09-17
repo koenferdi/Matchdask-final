@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Shield } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
+import { ProofBadge } from "@/components/proof-badge";
 import { CONTACT, STRIPE } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 
@@ -17,70 +18,64 @@ export const Route = createFileRoute("/exclusief")({
 
 function ExclusiefPage() {
   const { paid } = Route.useSearch();
-  const { exclusivePaid, markExclusivePaid, partners } = useMatchdesk();
+  const { exclusivePaid, markExclusivePaid } = useMatchdesk();
   useEffect(() => {
     if (paid === "1") markExclusivePaid();
   }, [paid, markExclusivePaid]);
-
   const unlocked = paid === "1" || exclusivePaid;
-  const verified = partners.filter((p) => p.status === "Actief" && !p.example && p.exclusivePaid);
-
-  if (!unlocked) {
-    return (
-      <main className="bg-paper py-16 text-ink">
-        <Wrap className="max-w-2xl">
-          <PageIntro kicker="Exclusief-proof · €149" title="Keuring voor het netwerk. Geen rapport.">
-            Je koopt geen leads en geen brochure. Je koopt een jaarlijkse check: KvK, reviews, werkgebied en of je reageert. Daarna een publieke badge — of niet.
-          </PageIntro>
-          <ul className="mb-6 space-y-2 text-sm">
-            <Line>KvK en bedrijfsgegevens nagelopen</Line>
-            <Line>Badge “Exclusief partner · gecontroleerd door Matchdesk”</Line>
-            <Line>1:1-aanvragen in jouw prefixen, geen veiling</Line>
-            <Line>Geen volume-garantie</Line>
-          </ul>
-          <Button asChild>
-            <a href={STRIPE.exclusief}>Claim early-bird €149</a>
-          </Button>
-        </Wrap>
-      </main>
-    );
-  }
 
   return (
     <main className="bg-paper py-16 text-ink">
       <Wrap className="max-w-3xl">
-        <p className="mb-3 inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-teal">
-          <Shield className="size-4" /> Early-bird ontvangen
-        </p>
-        <h1 className="font-display text-[clamp(2rem,4vw,3.2rem)]">Je keuring staat klaar.</h1>
-        <p className="mt-3 max-w-xl text-muted">
-          Betaling is binnen. Matchdesk beoordeelt je bedrijf voordat de badge live gaat. Zolang de status niet Actief is, blijf je uit de publieke lijst.
-        </p>
-        <section className="mt-8 rounded-lg border border-line bg-white p-6">
-          <h2 className="font-display text-2xl">Wat er nu gebeurt</h2>
-          <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm">
-            <li>Wij checken KvK, reviews en of je werkgebied klopt.</li>
-            <li>Jij krijgt Actief of een toelichting wat er nog mist.</li>
-            <li>Pas bij Actief verschijn je op de pagina geverifieerde installateurs.</li>
-            <li>Aanvragen blijven 1:1. Geen cc naar concurrenten.</li>
-          </ol>
-        </section>
-        {verified.length ? (
-          <section className="mt-6 rounded-lg border border-line bg-white p-6">
-            <h2 className="font-display text-2xl">Nu in het netwerk</h2>
-            <ul className="mt-3 space-y-2 text-sm">
-              {verified.map((p) => (
-                <li key={p.id}>{p.name} · {p.prefixes.map((x) => `${x}xx`).join(", ")}</li>
-              ))}
-            </ul>
-          </section>
+        <PageIntro kicker="Exclusief-proof · €149" title="Keuring. Daarna pas een badge.">
+          Betalen zet je niet automatisch op de site. Koen laat toe — of niet. Alleen Actieve bedrijven staan op de publieke lijst.
+        </PageIntro>
+
+        <div className="mb-10 flex flex-wrap items-center gap-6 rounded-lg border border-line bg-night p-6 text-paper">
+          <ProofBadge className="h-28 w-28" />
+          <div>
+            <p className="text-xs tracking-[0.16em] text-mint">DE BADGE</p>
+            <h2 className="mt-1 font-display text-2xl">Exclusief partner · gecontroleerd door Matchdesk</h2>
+            <Link to="/exclusief/voorbeeld" className="mt-2 inline-block text-sm text-mint underline-offset-4 hover:underline">
+              Bekijk het pakket
+            </Link>
+          </div>
+        </div>
+
+        {unlocked ? (
+          <p className="mb-8 rounded-md border border-line bg-mint/20 px-4 py-3 text-sm">
+            Betaling ontvangen. Je staat nog niet live. Wacht op keuring in Beheer.
+          </p>
         ) : null}
+
+        <ol className="space-y-5">
+          <li><strong>1. Aanmelden.</strong> KvK, prefixen, vak. Status Te beoordelen — onzichtbaar.</li>
+          <li><strong>2. Keuring betalen (€149).</strong> Check, geen leadpakket.</li>
+          <li><strong>3. Koen beoordeelt.</strong> Actief, pauze of afwijzen. Nooit automatisch.</li>
+          <li><strong>4. Bij Actief:</strong> naam op de lijst. Met keuring: badge. 1:1-aanvragen in jouw gebied. Geen volume-garantie.</li>
+        </ol>
+
+        <ul className="mt-8 space-y-2 text-sm">
+          <Line>Geen automatische plaatsing na Stripe</Line>
+          <Line>Geen veiling, geen cc naar concurrenten</Line>
+          <Line>Badge alleen ná toelating</Line>
+        </ul>
+
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild>
-            <Link to="/installateurs">Geverifieerde installateurs</Link>
+          {!unlocked ? (
+            <Button asChild>
+              <a href={STRIPE.exclusief}>Claim early-bird €149</a>
+            </Button>
+          ) : (
+            <Button asChild>
+              <Link to="/bedrijf">Naar bedrijfsportaal</Link>
+            </Button>
+          )}
+          <Button asChild variant="ghost">
+            <Link to="/exclusief/voorbeeld">Voorbeeld van het pakket</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link to="/bedrijf">Bedrijfsportaal</Link>
+            <Link to="/aanmelden">Bedrijf aanmelden</Link>
           </Button>
           <Button asChild variant="ghost">
             <a href={CONTACT.whatsapp} target="_blank" rel="noreferrer">WhatsApp</a>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
 import {
@@ -11,7 +10,6 @@ import {
   SHADES,
   STRIPE,
   buildFitReport,
-  kwh,
   type Meter,
   type RoofDir,
   type RoofType,
@@ -19,6 +17,7 @@ import {
 } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
+import { FitDocument } from "@/components/fit-document";
 
 type Search = { paid?: string };
 
@@ -58,6 +57,9 @@ function RapportPage() {
           </PageIntro>
           <Button asChild>
             <a href={STRIPE.woningscan}>Betaal €39 en open het rapport</a>
+          </Button>
+          <Button asChild variant="ghost" className="mt-3">
+            <Link to="/rapport/voorbeeld">Bekijk een voorbeeldrapport</Link>
           </Button>
         </Wrap>
       </main>
@@ -105,47 +107,7 @@ function RapportPage() {
           Gegenereerd uit jouw antwoorden. Geen schouwing, geen offerte, geen opbrengstgarantie. Wél wat het vakbedrijf nodig heeft voor het eerste gesprek.
         </p>
 
-        <section className="mt-8 rounded-lg border border-line bg-white p-6">
-          <h2 className="font-display text-2xl">Projectbrief</h2>
-          <ul className="mt-4 space-y-2 text-sm">
-            {fit.brief.map((l) => (
-              <li key={l} className="flex gap-2">
-                <Check className="mt-0.5 size-4 shrink-0 text-teal" />
-                {l}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="mt-6 grid gap-4 sm:grid-cols-3">
-          <Stat k="Regio / net" v={`${fit.scan.region} · ${fit.operator}`} />
-          <Stat k="Geschiktheid" v={fit.scan.suitability} />
-          <Stat
-            k={lead.product === "Thuisbatterij" ? "Batterij (richt)" : "Veld (richt)"}
-            v={lead.product === "Thuisbatterij" ? `${fit.scan.batteryKwh} kWh` : `${fit.scan.panels} panelen · ${kwh(fit.scan.yieldKwh)}`}
-          />
-        </section>
-
-        <section className="mt-6 rounded-lg border border-line bg-white p-6">
-          <h2 className="font-display text-2xl">Vragen voor de schouwing</h2>
-          <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm">
-            {fit.installerAsk.map((q) => (
-              <li key={q}>{q}</li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="mt-6 rounded-lg border border-line bg-white p-6">
-          <h2 className="font-display text-2xl">Aandachtspunten</h2>
-          <ul className="mt-4 space-y-2 text-sm">
-            {fit.risks.map((r) => (
-              <li key={r} className="flex gap-2">
-                <Check className="mt-0.5 size-4 shrink-0 text-teal" />
-                {r}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <FitDocument lead={lead} />
 
         <form onSubmit={saveExtra} className="mt-6 rounded-lg border border-line bg-white p-6 print:hidden">
           <h2 className="font-display text-2xl">Scherp het rapport</h2>
@@ -193,14 +155,5 @@ function RapportPage() {
         </div>
       </Wrap>
     </main>
-  );
-}
-
-function Stat({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="rounded-lg border border-line bg-white p-5">
-      <small className="text-[11px] uppercase tracking-wider text-muted">{k}</small>
-      <strong className="mt-1 block font-display text-xl capitalize">{v}</strong>
-    </div>
   );
 }

@@ -70,6 +70,28 @@ export type Lead = {
   note?: string;
 };
 
+export const SAMPLE_LEAD: Lead = {
+  id: "MD-VOORBEELD-1328",
+  product: "Zonnepanelen",
+  postcode: "1328 LE",
+  city: "Almere",
+  address: "Chagallweg 38",
+  term: "Binnen 3 maanden",
+  name: "Fleur de Vries",
+  email: "fleur@voorbeeld.getmatchdesk.nl",
+  phone: "06 1234 5678",
+  consent: true,
+  status: "Nieuw",
+  createdAt: "2026-09-17T10:00:00.000Z",
+  usageKwh: 4200,
+  roofType: "Hellend dak",
+  roofDir: "Zuidwest",
+  shade: "Deels (dakkapel, schoorsteen, boom)",
+  meter: "3-fase",
+  hasSolar: false,
+  note: "Wil eerst een schouwing voordat er een offerte komt. Auto laadt thuis.",
+};
+
 export type Partner = {
   id: string;
   name: string;

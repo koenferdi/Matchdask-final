@@ -3,6 +3,7 @@ import { ArrowRight, Calendar, Check, MapPin, Shield, type LucideIcon } from "lu
 import { Button } from "@/components/ui/button";
 import { Wrap } from "@/components/site-shell";
 import { useMatchdesk } from "@/lib/store";
+import { ProofBadge } from "@/components/proof-badge";
 
 export const Route = createFileRoute("/installateurs")({ component: Installateurs });
 
@@ -109,11 +110,7 @@ function Installateurs() {
                   <article key={p.id} className="rounded-lg border border-line bg-white p-6">
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="font-display text-2xl">{p.name}</h3>
-                      {p.exclusivePaid ? (
-                        <span className="rounded-full bg-mint/50 px-2.5 py-1 text-[11px] font-semibold text-teal">
-                          Exclusief-proof
-                        </span>
-                      ) : (
+                      {p.exclusivePaid ? <ProofBadge className="h-14 w-14" /> : (
                         <span className="rounded-full bg-paper px-2.5 py-1 text-[11px] font-semibold text-teal">Actief</span>
                       )}
                     </div>

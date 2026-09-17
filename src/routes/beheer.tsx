@@ -11,7 +11,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
 export const Route = createFileRoute("/beheer")({ component: BeheerPage });
 
-type Tab = "overzicht" | "aanvragen" | "installateurs" | "afspraken" | "nieuwsbrief" | "website" | "notities";
+type Tab = "overzicht" | "aanvragen" | "installateurs" | "keuring" | "afspraken" | "nieuwsbrief" | "website" | "notities";
 
 function BeheerPage() {
   return (
@@ -63,6 +63,7 @@ function Beheer() {
     { id: "overzicht", label: "Overzicht" },
     { id: "aanvragen", label: "Aanvragen" },
     { id: "installateurs", label: "Installateurs" },
+    { id: "keuring", label: "Keuring / badge" },
     { id: "afspraken", label: "Afspraken" },
     { id: "nieuwsbrief", label: "Nieuwsbrief" },
     { id: "website", label: "Website" },
@@ -120,6 +121,7 @@ function Beheer() {
             {tab === "overzicht" ? <Overzicht onOpen={setTab} /> : null}
             {tab === "aanvragen" ? <Aanvragen /> : null}
             {tab === "installateurs" ? <Installateurs /> : null}
+            {tab === "keuring" ? <Keuring /> : null}
             {tab === "afspraken" ? <Afspraken /> : null}
             {tab === "nieuwsbrief" ? <Nieuwsbrief /> : null}
             {tab === "website" ? <Website /> : null}
@@ -275,6 +277,56 @@ function Aanvragen() {
           </table>
         </div>
       )}
+    </section>
+  );
+}
+
+}
+
+function Keuring() {
+  const { partners, setPartnerStatus, setPartnerExclusive } = useMatchdesk();
+  const queue = partners.filter((p) => !p.example && (p.status === "Te beoordelen" || p.exclusivePaid));
+  return (
+    <section className="rounded-lg border border-line bg-white p-6">
+      <h2 className="text-2xl">Keuring</h2>
+      <p className="mt-1 text-sm text-muted">
+        Betalen plaatst niemand op de site. Alleen jij zet op Actief. Badge alleen bij Actief + keuring betaald.
+      </p>
+      {queue.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">Geen open keuringen.</p>
+      ) : (
+        <ul className="mt-4 space-y-4">
+          {queue.map((p) => (
+            <li key={p.id} className="rounded-md border border-line p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <strong className="font-display text-lg">{p.name}</strong>
+                  <p className="text-xs text-muted">
+                    {p.email} · KvK {p.kvk} · {p.prefixes.map((x) => `${x}xx`).join(", ")}
+                  </p>
+                  <p className="mt-1 text-xs">
+                    Status {p.status} · keuring {p.exclusivePaid ? "betaald" : "niet betaald"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => setPartnerStatus(p.id, "Actief")}>
+                    Toelaten (live)
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setPartnerStatus(p.id, "Gepauzeerd")}>
+                    Pauzeren
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setPartnerExclusive(p.id, !p.exclusivePaid)}>
+                    {p.exclusivePaid ? "Badge uit" : "Badge aan"}
+                  </Button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-6 text-xs text-muted">
+        Voorbeeldrapport: /rapport/voorbeeld · Badge-pakket: /exclusief/voorbeeld
+      </p>
     </section>
   );
 }

@@ -10,6 +10,8 @@ files=(
   src/components/auth-form.tsx
   src/components/site-shell.tsx
   src/components/demo-portal.tsx
+  src/components/proof-badge.tsx
+  src/components/fit-document.tsx
   src/styles.css
   src/lib/matchdesk.ts
   src/lib/store.ts
@@ -20,7 +22,9 @@ files=(
   src/routes/index.tsx
   src/routes/aanvragen.tsx
   src/routes/rapport.tsx
+  src/routes/rapport.voorbeeld.tsx
   src/routes/exclusief.tsx
+  src/routes/exclusief.voorbeeld.tsx
   src/routes/installateurs.tsx
   src/routes/aanmelden.tsx
   src/routes/wachtlijst.tsx
