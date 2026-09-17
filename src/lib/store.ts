@@ -56,6 +56,7 @@ type Store = {
   requestMatch: (leadId: string) => void;
   bookAppointment: (leadId: string, date: string, time: string) => void;
   cancelAppointment: (leadId: string) => void;
+  confirmAppointment: (leadId: string) => void;
   submitPartner: (partner: Omit<Partner, "id" | "status" | "quality">) => Partner;
   setPartnerStatus: (id: string, status: Partner["status"]) => void;
   setLeadStatus: (id: string, status: Lead["status"]) => void;
@@ -160,6 +161,16 @@ export const useMatchdesk = create<Store>((set, get) => ({
       leads: s.leads.map((l) =>
         l.id === leadId && l.appointment
           ? { ...l, appointment: { ...l.appointment, status: "Geannuleerd" } }
+          : l,
+      ),
+    }));
+    persistNow(get);
+  },
+  confirmAppointment: (leadId) => {
+    set((s) => ({
+      leads: s.leads.map((l) =>
+        l.id === leadId && l.appointment
+          ? { ...l, appointment: { ...l.appointment, status: "Bevestigd" } }
           : l,
       ),
     }));

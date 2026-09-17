@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
 import { PortalGate } from "@/components/portal-gate";
-import { CONTACT, STAGES, STRIPE, findPartnerFor, type Lead } from "@/lib/matchdesk";
+import { CONTACT, PRODUCTS, STAGES, STRIPE, findPartnerFor, type Lead, type Product } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 import { isOwner } from "@/lib/owner";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
 export const Route = createFileRoute("/beheer")({ component: BeheerPage });
 
-type Tab = "overzicht" | "aanvragen" | "installateurs" | "nieuwsbrief" | "website" | "notities";
+type Tab = "overzicht" | "aanvragen" | "installateurs" | "afspraken" | "nieuwsbrief" | "website" | "notities";
 
 function BeheerPage() {
   return (
@@ -63,6 +63,7 @@ function Beheer() {
     { id: "overzicht", label: "Overzicht" },
     { id: "aanvragen", label: "Aanvragen" },
     { id: "installateurs", label: "Installateurs" },
+    { id: "afspraken", label: "Afspraken" },
     { id: "nieuwsbrief", label: "Nieuwsbrief" },
     { id: "website", label: "Website" },
     { id: "notities", label: "Notities" },
@@ -91,6 +92,7 @@ function Beheer() {
         {tab === "overzicht" ? <Overzicht /> : null}
         {tab === "aanvragen" ? <Aanvragen /> : null}
         {tab === "installateurs" ? <Installateurs /> : null}
+        {tab === "afspraken" ? <Afspraken /> : null}
         {tab === "nieuwsbrief" ? <Nieuwsbrief /> : null}
         {tab === "website" ? <Website /> : null}
         {tab === "notities" ? <Notities /> : null}
@@ -238,11 +240,56 @@ function Aanvragen() {
 }
 
 function Installateurs() {
-  const { partners, setPartnerStatus, deletePartner } = useMatchdesk();
+  const { partners, setPartnerStatus, deletePartner, submitPartner } = useMatchdesk();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [kvk, setKvk] = useState("");
+  const [prefixes, setPrefixes] = useState("");
+  const [product, setProduct] = useState<Product>("Zonnepanelen");
   return (
     <section className="rounded-lg border border-line bg-white p-6">
-      <h2 className="text-2xl">Installateurs</h2>
-      <p className="text-sm text-muted">Toelaten, pauzeren, archiveren of verwijderen.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl">Installateurs</h2>
+          <p className="text-sm text-muted">Toelaten, pauzeren, archiveren, toevoegen of verwijderen.</p>
+        </div>
+        <Button size="sm" onClick={() => setOpen((v) => !v)}>
+          {open ? "Sluit" : "Installateur toevoegen"}
+        </Button>
+      </div>
+      {open ? (
+        <form
+          className="mt-4 grid gap-3 rounded-md border border-line p-4 md:grid-cols-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitPartner({
+              name,
+              email,
+              kvk,
+              products: [product],
+              prefixes: prefixes.split(/[,\s]+/).map((x) => x.replace(/\D/g, "").slice(0, 2)).filter(Boolean),
+              capacity: 4,
+            });
+            setName("");
+            setEmail("");
+            setKvk("");
+            setPrefixes("");
+            setOpen(false);
+          }}
+        >
+          <input className="field-input" required placeholder="Bedrijfsnaam" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="field-input" required type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="field-input" required placeholder="KvK" value={kvk} onChange={(e) => setKvk(e.target.value)} />
+          <input className="field-input" required placeholder="Postcode-prefixen, bijv. 35, 34" value={prefixes} onChange={(e) => setPrefixes(e.target.value)} />
+          <select className="field-input" value={product} onChange={(e) => setProduct(e.target.value as Product)}>
+            {PRODUCTS.map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+          <Button type="submit">Opslaan</Button>
+        </form>
+      ) : null}
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {partners.map((p) => (
           <article key={p.id} className="rounded-md border border-line p-4">
@@ -276,6 +323,46 @@ function Installateurs() {
           </article>
         ))}
       </div>
+    </section>
+  );
+}
+
+function Afspraken() {
+  const { leads, partners, confirmAppointment, cancelAppointment } = useMatchdesk();
+  const rows = leads.filter((l) => l.appointment);
+  return (
+    <section className="rounded-lg border border-line bg-white p-6">
+      <h2 className="text-2xl">Afspraken</h2>
+      <p className="text-sm text-muted">Bevestigen of annuleren.</p>
+      {rows.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">Nog geen afspraken gepland.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-line text-sm">
+          {rows.map((l) => {
+            const p = partners.find((x) => x.id === l.partnerId);
+            return (
+              <li key={l.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <span>
+                  <strong>{l.name}</strong> · {l.appointment?.date} {l.appointment?.time} · {l.appointment?.status}
+                  <small className="mt-1 block text-xs text-muted">
+                    {l.product} · {p?.name ?? "geen match"} · {l.email}
+                  </small>
+                </span>
+                <span className="flex gap-2">
+                  {l.appointment?.status !== "Bevestigd" ? (
+                    <Button size="sm" onClick={() => confirmAppointment(l.id)}>
+                      Bevestig
+                    </Button>
+                  ) : null}
+                  <Button size="sm" variant="ghost" onClick={() => cancelAppointment(l.id)}>
+                    Annuleer
+                  </Button>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }
@@ -373,8 +460,43 @@ function Website() {
           WhatsApp
         </a>
       </section>
+      <section className="rounded-lg border border-line bg-white p-6 lg:col-span-2">
+        <h2 className="text-2xl">Pagina’s en data</h2>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            ["Home", "/"],
+            ["Aanvragen", "/aanvragen"],
+            ["Login", "/login"],
+            ["Klant", "/klant"],
+            ["Bedrijf", "/bedrijf"],
+            ["Installateurs", "/installateurs"],
+            ["Blog", "/blog"],
+            ["Tools", "/tools"],
+            ["Nieuwsbrief", "/nieuwsbrief"],
+            ["Wachtlijst", "/wachtlijst"],
+          ].map(([label, href]) => (
+            <Button key={href} asChild size="sm" variant="ghost">
+              <a href={href}>{label}</a>
+            </Button>
+          ))}
+        </div>
+        <Button className="mt-4" size="sm" variant="ghost" onClick={() => exportWorkspace()}>
+          Exporteer alle data (JSON)
+        </Button>
+      </section>
     </div>
   );
+}
+
+function exportWorkspace() {
+  const raw = localStorage.getItem("matchdesk-workspace-v1") || "{}";
+  const blob = new Blob([raw], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `matchdesk-beheer-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function Notities() {
