@@ -27,17 +27,17 @@ function BadgePakket() {
         </div>
 
         <ol className="mt-10 space-y-5">
-          <Step n="1" t="Aanmelden">
-            Bedrijf vult KvK, vakgebied en postcode-prefixen in. Status: Te beoordelen. Niet zichtbaar op de site.
+          <Step n="1" t="Gratis aanmelden">
+            KvK, vakgebied en postcode-prefixen. Status: Te beoordelen. Niet zichtbaar op de site. Geen betaling.
           </Step>
-          <Step n="2" t="Betalen (optioneel, €149)">
-            Early-bird voor de keuring. Geen leads, geen plaats in een veiling. Alleen de check.
+          <Step n="2" t="Matchdesk beoordeelt">
+            KvK, reviews, werkgebied. Uitkomst: Actief, pauzeren of afwijzen. Nooit automatisch.
           </Step>
-          <Step n="3" t="Koen keurt in Beheer">
-            KvK, reviews, werkgebied, of jullie reageren. Uitkomst: Actief, pauzeren of afwijzen. Nooit automatisch.
+          <Step n="3" t="Bij Actief">
+            Naam op de publieke lijst. 1:1-aanvragen in jullie prefixen. Geen volume-garantie.
           </Step>
-          <Step n="4" t="Pas bij Actief">
-            Naam op /installateurs. Met betaalde keuring: deze badge. 1:1-aanvragen in jullie prefixen. Geen volume-garantie.
+          <Step n="4" t="Optioneel: badge">
+            Alleen als je de publieke keuring wilt. Geen voorwaarde om lid te worden. Geen leadpakket.
           </Step>
         </ol>
 

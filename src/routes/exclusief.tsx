@@ -28,7 +28,7 @@ function ExclusiefPage() {
     <main className="bg-paper py-16 text-ink">
       <Wrap className="max-w-3xl">
         <PageIntro kicker="Optioneel · Exclusief-proof · €149" title="Een badge. Geen toegangskaartje.">
-          Aanmelden als bedrijf is gratis. Dit bedrag is alleen voor de keuring van de publieke badge. Betalen zet je niet live. Koen laat toe — of niet.
+          Aanmelden als bedrijf is gratis. Dit bedrag is alleen voor de keuring van de publieke badge. Betalen zet je niet live. Matchdesk laat toe — of niet.
         </PageIntro>
 
         <div className="mb-10 flex flex-wrap items-center gap-6 rounded-lg border border-line bg-night p-6 text-paper">
@@ -51,7 +51,7 @@ function ExclusiefPage() {
         <ol className="space-y-5">
           <li><strong>1. Eerst aanmelden — gratis.</strong> KvK, prefixen, vak. Geen betaling nodig.</li>
           <li><strong>2. Optioneel: keuring €149.</strong> Alleen als je de badge wilt. Geen leadpakket.</li>
-          <li><strong>3. Koen beoordeelt.</strong> Actief, pauze of afwijzen. Nooit automatisch.</li>
+          <li><strong>3. Matchdesk beoordeelt.</strong> Actief, pauze of afwijzen. Nooit automatisch.</li>
           <li><strong>4. Bij Actief:</strong> 1:1-aanvragen. Badge alleen als de keuring is betaald én je bent toegelaten.</li>
         </ol>
 

@@ -38,7 +38,7 @@ function OwnerOnly({ children }: { children: ReactNode }) {
     return (
       <main className="bg-paper py-16 text-ink">
         <Wrap>
-          <PageIntro kicker="Beheer" title="Dit deel is alleen voor Koen.">
+          <PageIntro kicker="Beheer" title="Dit deel is alleen voor de beheerder.">
             Het Matchdesk-beheer is geen klant- of bedrijfportaal.
           </PageIntro>
           <div className="flex flex-wrap gap-3">
@@ -84,8 +84,7 @@ function Beheer() {
         </div>
         {data.serverOwner === false ? (
           <p className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            Server herkent dit account niet als eigenaar. Wijzigingen blijven dan niet bewaard. Log in met
-            koenferdi@gmail.com of info@getmatchdesk.nl.
+            Server herkent dit account niet als eigenaar. Wijzigingen blijven dan niet bewaard. Log in met het eigenaarsaccount.
           </p>
         ) : null}
         <div className="grid gap-6 lg:grid-cols-[200px_1fr]">

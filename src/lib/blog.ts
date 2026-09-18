@@ -39,7 +39,7 @@ export const ARTICLES: Article[] = [
       "Op Matchdesk staat geen catalogus van iedereen die een KvK-nummer heeft. De pagina geverifieerde installateurs toont alleen bedrijven die zijn toegelaten: Actief, geen voorbeeldprofiel.",
       "Exclusief-proof (€149 early-bird) is de keuring: KvK, reviews, werkgebied, of je reageert. Slaagt die, dan de badge. Zakt hij, dan geen badge en geen publieke plek. We kopen je geen klussen.",
       "Aanvragen blijven 1:1. De huiseigenaar betaalt Matchdesk niets. Commissie spreek je vooraf af, pas als de klus doorgaat.",
-      "Meld je bedrijf aan, maak een account, optioneel de keuring. Tot Koen je op Actief zet, blijf je uit de lijst. Dat is bewust.",
+      "Meld je bedrijf aan, maak een account, optioneel de keuring. Tot Matchdesk je op Actief zet, blijf je uit de lijst. Dat is bewust.",
     ],
   },
   {
