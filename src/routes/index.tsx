@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Plus } from "lucide-react";
 import { Wrap } from "@/components/site-shell";
 import { CinemaHero, HomeScrollReveal } from "@/components/cinema-hero";
@@ -10,7 +10,14 @@ import { CONTACT, kwh } from "@/lib/matchdesk";
 import { ARTICLES } from "@/lib/blog";
 import { cn } from "@/lib/cn";
 
-export const Route = createFileRoute("/")({ component: Home });
+type Search = { kies?: string };
+
+export const Route = createFileRoute("/")({
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    kies: typeof s.kies === "string" ? s.kies : undefined,
+  }),
+  component: Home,
+});
 
 const STEPS = [
   {
@@ -58,16 +65,26 @@ const FAQ = [
 ];
 
 function Home() {
+  const { kies } = Route.useSearch();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [gate, setGate] = useState(true);
+  const [stayed, setStayed] = useState(false);
   const [use, setUse] = useState(3500);
   const [solar, setSolar] = useState(3000);
   const [share, setShare] = useState(30);
   const direct = Math.round((solar * share) / 100);
   const fromGrid = Math.max(0, use - direct);
+  const gate = kies === "1" || !stayed;
 
   if (gate) {
-    return <PathGate onStay={() => setGate(false)} />;
+    return (
+      <PathGate
+        onStay={() => {
+          setStayed(true);
+          void navigate({ to: "/", search: {} });
+        }}
+      />
+    );
   }
 
   return (
