@@ -28,7 +28,7 @@ function WoningPage() {
                 Start je aanvraag <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild variant="ghost">
+            <Button asChild variant="onDark">
               <Link to="/voorbeeld-rapport">Voorbeeldrapport</Link>
             </Button>
           </div>

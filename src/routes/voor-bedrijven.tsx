@@ -28,7 +28,7 @@ function BedrijvenPage() {
                 Meld je bedrijf aan — gratis <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild variant="ghost">
+            <Button asChild variant="onDark">
               <Link to="/login">Ik heb al een account</Link>
             </Button>
           </div>
@@ -55,16 +55,16 @@ function BedrijvenPage() {
       <section className="border-t border-white/8 py-16">
         <Wrap className="max-w-2xl">
           <p className="text-[12px] font-semibold tracking-[0.14em] text-mint">OPTIONEEL</p>
-          <h2 className="mt-3 font-display text-3xl">Exclusief-proof · €149</h2>
+          <h2 className="mt-3 font-display text-3xl">Publieke badge — als je wilt</h2>
           <p className="mt-3 text-mint/75">
-            Geen voorwaarde om lid te worden. Alleen als je de publieke badge wilt: een keuring. Betalen zet je niet
-            automatisch op de lijst.
+            Geen voorwaarde om lid te worden. Alleen als je herkenbaar wilt zijn op de lijst. Geen inschrijfgeld, geen
+            automatische plaatsing.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button asChild variant="ghost">
+            <Button asChild variant="onDark">
               <Link to="/voorbeeld-badge">Wat de badge is</Link>
             </Button>
-            <Button asChild variant="ghost">
+            <Button asChild variant="onDark">
               <Link to="/exclusief">Meer over de keuring</Link>
             </Button>
           </div>

@@ -14,6 +14,7 @@ files=(
   src/components/path-choice.tsx
   src/components/proof-badge.tsx
   src/components/fit-document.tsx
+  src/components/ui/button.tsx
   src/styles.css
   src/lib/matchdesk.ts
   src/lib/store.ts
