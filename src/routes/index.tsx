@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Plus } from "lucide-react";
 import { Wrap } from "@/components/site-shell";
@@ -74,6 +74,11 @@ function Home() {
   const [share, setShare] = useState(30);
   const direct = Math.round((solar * share) / 100);
   const fromGrid = Math.max(0, use - direct);
+
+  useEffect(() => {
+    if (kies === "1") setStayed(false);
+  }, [kies]);
+
   const gate = kies === "1" || !stayed;
 
   if (gate) {

@@ -63,7 +63,6 @@ export function PathGate({ onStay }: { onStay: () => void }) {
 }
 
 export function PathChoice({ current }: { current: "/" | "/woning" | "/voor-bedrijven" }) {
-  const navigate = useNavigate();
   const here = PATHS.find((p) => p.to === current);
   return (
     <div className="border-b border-white/8 bg-deep px-5 py-3 text-sm text-mint/80 md:px-16">
@@ -71,16 +70,9 @@ export function PathChoice({ current }: { current: "/" | "/woning" | "/voor-bedr
         <span>
           Je pad: <strong className="text-paper">{here?.title ?? "Oriëntatie"}</strong>
         </span>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 text-mint hover:text-paper"
-          onClick={() => {
-            window.scrollTo(0, 0);
-            void navigate({ to: "/", search: { kies: "1" } });
-          }}
-        >
+        <a href="/?kies=1" className="inline-flex items-center gap-1 text-mint hover:text-paper">
           Andere keuze <ArrowRight className="size-3.5" />
-        </button>
+        </a>
       </Wrap>
     </div>
   );
