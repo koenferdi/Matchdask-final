@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,38 @@ import { useMatchdesk } from "@/lib/store";
 import { isOwner } from "@/lib/owner";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
-export const Route = createFileRoute("/beheer")({ component: BeheerPage });
+const TABS = [
+  "overzicht",
+  "aanvragen",
+  "keuring",
+  "installateurs",
+  "afspraken",
+  "nieuwsbrief",
+  "website",
+  "notities",
+] as const;
 
-type Tab = "overzicht" | "aanvragen" | "installateurs" | "keuring" | "afspraken" | "nieuwsbrief" | "website" | "notities";
+type Tab = (typeof TABS)[number];
+
+const LABELS: Record<Tab, string> = {
+  overzicht: "Overzicht",
+  aanvragen: "Aanvragen",
+  keuring: "Keuring",
+  installateurs: "Bedrijven",
+  afspraken: "Afspraken",
+  nieuwsbrief: "Nieuwsbrief",
+  website: "Website",
+  notities: "Notities",
+};
+
+type Search = { tab?: Tab };
+
+export const Route = createFileRoute("/beheer")({
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    tab: TABS.includes(s.tab as Tab) ? (s.tab as Tab) : undefined,
+  }),
+  component: BeheerPage,
+});
 
 function BeheerPage() {
   return (
@@ -27,25 +56,25 @@ function OwnerOnly({ children }: { children: ReactNode }) {
   const { user, isPending } = useCurrentUserState();
   if (isPending) {
     return (
-      <main className="bg-paper py-16">
+      <main className="bg-night py-16">
         <Wrap>
-          <div className="h-40 animate-pulse rounded-lg bg-line/60" />
+          <div className="h-40 animate-pulse rounded-lg bg-white/10" />
         </Wrap>
       </main>
     );
   }
   if (!isOwner(user)) {
     return (
-      <main className="bg-paper py-16 text-ink">
+      <main className="bg-night py-16 text-paper">
         <Wrap>
           <PageIntro kicker="Beheer" title="Dit deel is alleen voor de beheerder.">
             Het Matchdesk-beheer is geen klant- of bedrijfportaal.
           </PageIntro>
           <div className="flex flex-wrap gap-3">
-            <Button asChild>
+            <Button asChild variant="mint">
               <Link to="/klant">Naar klantportaal</Link>
             </Button>
-            <Button asChild variant="ghost">
+            <Button asChild variant="onDark">
               <Link to="/bedrijf">Naar bedrijfsportaal</Link>
             </Button>
           </div>
@@ -57,139 +86,151 @@ function OwnerOnly({ children }: { children: ReactNode }) {
 }
 
 function Beheer() {
-  const [tab, setTab] = useState<Tab>("overzicht");
+  const { tab: tabQ } = Route.useSearch();
+  const navigate = useNavigate({ from: "/beheer" });
+  const tab: Tab = tabQ ?? "overzicht";
   const data = useMatchdesk();
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "overzicht", label: "Overzicht" },
-    { id: "aanvragen", label: "Aanvragen" },
-    { id: "installateurs", label: "Installateurs" },
-    { id: "keuring", label: "Keuring / badge" },
-    { id: "afspraken", label: "Afspraken" },
-    { id: "nieuwsbrief", label: "Nieuwsbrief" },
-    { id: "website", label: "Website" },
-    { id: "notities", label: "Notities" },
-  ];
+  const openLeads = data.leads.filter((l) => l.status === "Nieuw").length;
+  const pending = data.partners.filter((p) => !p.example && p.status === "Te beoordelen").length;
+  const counts: Partial<Record<Tab, number>> = {
+    aanvragen: openLeads,
+    keuring: pending,
+    afspraken: data.leads.filter((l) => l.appointment && l.appointment.status === "Aangevraagd").length,
+    nieuwsbrief: data.subscribers.length,
+  };
+
+  function open(next: Tab) {
+    void navigate({ search: { tab: next === "overzicht" ? undefined : next } });
+  }
 
   return (
-    <main className="bg-paper py-8 text-ink md:py-12">
-      <Wrap>
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-teal">Beheer · alleen jij</p>
-            <h1 className="mt-2 font-display text-[clamp(1.8rem,3vw,2.6rem)]">Cockpit</h1>
+    <main className="cockpit min-h-svh bg-night text-paper">
+      <div className="mx-auto flex max-w-[1400px] flex-col lg:flex-row">
+        <aside className="border-b border-white/10 lg:w-56 lg:shrink-0 lg:border-b-0 lg:border-r">
+          <div className="px-4 py-4 lg:px-5">
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-mint/60">ALLEEN JIJ</p>
+            <h1 className="mt-1 font-display text-2xl">Cockpit</h1>
           </div>
-          <p className="text-sm text-muted">
-            {data.leads.length} aanvragen · {data.partners.length} bedrijven · {data.subscribers.length} nieuwsbrief
-          </p>
-        </div>
-        {data.serverOwner === false ? (
-          <p className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            Server herkent dit account niet als eigenaar. Wijzigingen blijven dan niet bewaard. Log in met het eigenaarsaccount.
-          </p>
-        ) : null}
-        <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
-          <nav className="lg:sticky lg:top-28 lg:self-start" aria-label="Beheer">
-            <select
-              className="field-input lg:hidden"
-              value={tab}
-              onChange={(e) => setTab(e.target.value as Tab)}
-            >
-              {tabs.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-            <ul className="hidden lg:block">
-              {tabs.map((t) => (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    onClick={() => setTab(t.id)}
-                    className={`w-full rounded-sm px-3 py-2.5 text-left text-sm font-semibold ${
-                      tab === t.id ? "bg-mint/40 text-ink" : "text-muted hover:text-ink"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <nav className="flex gap-2 overflow-x-auto px-3 pb-3 [scrollbar-width:none] lg:flex-col lg:overflow-visible lg:px-2 lg:pb-6" aria-label="Beheer">
+            {TABS.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => open(id)}
+                className={`flex shrink-0 items-center justify-between gap-2 rounded-full px-3 py-2 text-sm font-semibold lg:rounded-sm lg:px-3 ${
+                  tab === id ? "bg-mint text-night" : "bg-white/5 text-mint/80 hover:bg-white/10 hover:text-paper"
+                }`}
+              >
+                {LABELS[id]}
+                {counts[id] ? (
+                  <span className={`rounded-full px-1.5 text-[11px] ${tab === id ? "bg-night/20" : "bg-bright/20 text-bright"}`}>
+                    {counts[id]}
+                  </span>
+                ) : null}
+              </button>
+            ))}
           </nav>
-          <div>
-            {tab === "overzicht" ? <Overzicht onOpen={setTab} /> : null}
-            {tab === "aanvragen" ? <Aanvragen /> : null}
-            {tab === "installateurs" ? <Installateurs /> : null}
-            {tab === "keuring" ? <Keuring /> : null}
-            {tab === "afspraken" ? <Afspraken /> : null}
-            {tab === "nieuwsbrief" ? <Nieuwsbrief /> : null}
-            {tab === "website" ? <Website /> : null}
-            {tab === "notities" ? <Notities /> : null}
-          </div>
+        </aside>
+        <div className="min-w-0 flex-1 px-4 py-5 md:px-8 md:py-8">
+          {data.serverOwner === false ? (
+            <p className="mb-5 rounded-md border border-red-400/40 bg-red-950/40 px-4 py-3 text-sm text-red-100">
+              Server herkent dit account niet als eigenaar. Wijzigingen blijven dan niet bewaard. Log in met het eigenaarsaccount.
+            </p>
+          ) : null}
+          {tab === "overzicht" ? <Overzicht onOpen={open} /> : null}
+          {tab === "aanvragen" ? <Aanvragen /> : null}
+          {tab === "installateurs" ? <Installateurs /> : null}
+          {tab === "keuring" ? <Keuring /> : null}
+          {tab === "afspraken" ? <Afspraken /> : null}
+          {tab === "nieuwsbrief" ? <Nieuwsbrief /> : null}
+          {tab === "website" ? <Website /> : null}
+          {tab === "notities" ? <Notities /> : null}
         </div>
-      </Wrap>
+      </div>
     </main>
   );
 }
 
 function Overzicht({ onOpen }: { onOpen: (tab: Tab) => void }) {
-  const { leads, partners, subscribers, matchingPaused, siteNotice } = useMatchdesk();
+  const { leads, partners, subscribers, matchingPaused, setMatchingPaused, siteNotice } = useMatchdesk();
   const [health, setHealth] = useState<"laden" | "online" | "offline">("laden");
   useEffect(() => {
     fetch("/api/auth/ok", { credentials: "include" })
       .then((r) => setHealth(r.ok ? "online" : "offline"))
       .catch(() => setHealth("offline"));
   }, []);
-  const open = leads.filter((l) => l.status === "Nieuw").length;
-  const matched = leads.filter((l) => l.status === "Gematcht").length;
-  const done = leads.filter((l) => l.status === "Afgerond").length;
-  const pending = partners.filter((p) => p.status === "Te beoordelen").length;
-  const active = partners.filter((p) => p.status === "Actief").length;
+  const nieuw = leads.filter((l) => l.status === "Nieuw");
+  const pending = partners.filter((p) => !p.example && p.status === "Te beoordelen");
+  const active = partners.filter((p) => p.status === "Actief" && !p.example).length;
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Website" value={health === "laden" ? "…" : health === "online" ? "Online" : "Offline"} />
-        <Stat label="Matching" value={matchingPaused ? "Gepauzeerd" : "Actief"} />
-        <Stat label="Open aanvragen" value={String(open)} />
-        <Stat label="Actieve partners" value={String(active)} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="Website" value={health === "laden" ? "…" : health === "online" ? "Online" : "Offline"} warn={health === "offline"} />
+        <Stat label="Matching" value={matchingPaused ? "Pauze" : "Aan"} warn={matchingPaused} />
+        <Stat label="Open aanvragen" value={String(nieuw.length)} />
+        <Stat label="Live bedrijven" value={String(active)} />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Gematcht" value={String(matched)} />
-        <Stat label="Afgerond" value={String(done)} />
-        <Stat label="Partners te beoordelen" value={String(pending)} />
-        <Stat label="Nieuwsbrief" value={String(subscribers.length)} />
+
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-deep p-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="accent-bright" checked={matchingPaused} onChange={(e) => setMatchingPaused(e.target.checked)} />
+          Matching pauzeren
+        </label>
+        {siteNotice ? <span className="text-sm text-amber">Melding: {siteNotice}</span> : null}
+        <button type="button" className="ml-auto text-sm font-semibold text-mint" onClick={() => onOpen("website")}>
+          Website sturen →
+        </button>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            ["aanvragen", "Alle aanvragen"],
-            ["installateurs", "Bedrijven"],
-            ["afspraken", "Afspraken"],
-            ["website", "Website & export"],
-          ] as const
-        ).map(([id, label]) => (
-          <Button key={id} size="sm" variant="ghost" onClick={() => onOpen(id)}>
-            {label}
-          </Button>
-        ))}
-      </div>
-      {siteNotice ? (
-        <div className="rounded-lg border border-amber/40 bg-white p-4 text-sm">
-          Site-melding staat aan: <strong>{siteNotice}</strong>
+
+      <section className="rounded-lg border border-white/10 bg-deep p-5">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-xl">Nu doen</h2>
+          <span className="text-xs text-mint/60">{nieuw.length + pending.length} open</span>
         </div>
-      ) : null}
-      <section className="rounded-lg border border-line bg-white p-6">
-        <h2 className="text-2xl">Inzicht</h2>
-        <p className="mt-1 text-sm text-muted">Funnel van woningscan tot afronding. Eén aanvraag, één installateur.</p>
-        <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-5">
+        {nieuw.length === 0 && pending.length === 0 ? (
+          <p className="mt-3 text-sm text-mint/70">Niets open. Nieuwe scans en aanmeldingen komen hier.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {nieuw.slice(0, 6).map((l) => (
+              <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-white/8 pb-3 text-sm">
+                <span>
+                  <strong>{l.name}</strong> · {l.product}
+                  <span className="mt-0.5 block text-xs text-mint/60">
+                    {l.postcode} {l.city} · {l.email}
+                  </span>
+                </span>
+                <Button size="sm" variant="mint" onClick={() => onOpen("aanvragen")}>
+                  Open
+                </Button>
+              </li>
+            ))}
+            {pending.slice(0, 6).map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-white/8 pb-3 text-sm">
+                <span>
+                  <strong>{p.name}</strong> · te beoordelen
+                  <span className="mt-0.5 block text-xs text-mint/60">KvK {p.kvk} · {p.email}</span>
+                </span>
+                <Button size="sm" variant="mint" onClick={() => onOpen("keuring")}>
+                  Keuring
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-white/10 bg-deep p-5">
+        <h2 className="font-display text-xl">Funnel</h2>
+        <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {STAGES.map((s) => (
-            <li key={s} className="rounded-md border border-line px-3 py-3">
-              <small className="block text-[11px] uppercase tracking-wider text-muted">{s}</small>
-              <strong className="font-display text-2xl">{leads.filter((l) => l.status === s).length}</strong>
+            <li key={s} className="rounded-md border border-white/10 px-3 py-3">
+              <small className="block text-[11px] uppercase tracking-wider text-mint/50">{s}</small>
+              <strong className="font-display text-2xl tabular-nums">{leads.filter((l) => l.status === s).length}</strong>
             </li>
           ))}
         </ul>
+        <p className="mt-4 text-xs text-mint/50">{subscribers.length} nieuwsbrief · {partners.length} bedrijven in bestand</p>
       </section>
     </div>
   );
@@ -198,83 +239,60 @@ function Overzicht({ onOpen }: { onOpen: (tab: Tab) => void }) {
 function Aanvragen() {
   const { leads, partners, requestMatch, setLeadStatus, deleteLead } = useMatchdesk();
   return (
-    <section className="rounded-lg border border-line bg-white p-6">
-      <h2 className="text-2xl">{leads.length} aanvragen</h2>
-      <p className="text-sm text-muted">Status wijzigen, matchen of verwijderen.</p>
+    <section>
+      <h2 className="font-display text-2xl">{leads.length} aanvragen</h2>
+      <p className="text-sm text-mint/70">Status, match of verwijderen. Eén bedrijf per aanvraag.</p>
       {leads.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">Nog geen aanvragen. Nieuwe woningscans verschijnen hier.</p>
+        <p className="mt-4 text-sm text-mint/70">Nog geen aanvragen.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[880px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wider text-muted">
-              <tr>
-                <th className="py-2">ID</th>
-                <th>Klant</th>
-                <th>Product</th>
-                <th>Plaats</th>
-                <th>Status</th>
-                <th>Match</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map((l) => {
-                const p = l.partnerId ? partners.find((x) => x.id === l.partnerId) : findPartnerFor(l, partners);
-                return (
-                  <tr key={l.id} className="border-t border-line align-top">
-                    <td className="py-3 font-mono text-xs">{l.id}</td>
-                    <td>
-                      <strong>{l.name}</strong>
-                      <div className="text-xs text-muted">
-                        <a className="underline" href={`mailto:${l.email}`}>
-                          {l.email}
-                        </a>
-                        {l.phone ? (
-                          <>
-                            <br />
-                            <a className="underline" href={`tel:${l.phone}`}>
-                              {l.phone}
-                            </a>
-                          </>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td>{l.product}</td>
-                    <td>
-                      {l.postcode} {l.city}
-                      <div className="text-xs text-muted">{l.address}</div>
-                    </td>
-                    <td>
-                      <select
-                        className="field-input max-w-[10rem] py-1 text-xs"
-                        value={l.status}
-                        onChange={(e) => setLeadStatus(l.id, e.target.value as Lead["status"])}
-                      >
-                        {STAGES.map((s) => (
-                          <option key={s}>{s}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      {l.status === "Nieuw" ? (
-                        <Button size="sm" onClick={() => requestMatch(l.id)}>
-                          Match {p?.name.split(" ")[0] ?? ""}
-                        </Button>
-                      ) : (
-                        p?.name ?? "—"
-                      )}
-                    </td>
-                    <td>
-                      <button type="button" className="text-xs text-red-700" onClick={() => deleteLead(l.id)}>
-                        Verwijder
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ul className="mt-4 space-y-3">
+          {leads.map((l) => {
+            const p = l.partnerId ? partners.find((x) => x.id === l.partnerId) : findPartnerFor(l, partners);
+            return (
+              <li key={l.id} className="rounded-lg border border-white/10 bg-deep p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <strong className="font-display text-lg">{l.name}</strong>
+                    <p className="text-xs text-mint/60">
+                      {l.id} · {l.product} · {l.postcode} {l.city}
+                    </p>
+                    <p className="mt-1 text-xs">
+                      <a className="underline" href={`mailto:${l.email}`}>{l.email}</a>
+                      {l.phone ? (
+                        <>
+                          {" · "}
+                          <a className="underline" href={`tel:${l.phone}`}>{l.phone}</a>
+                        </>
+                      ) : null}
+                    </p>
+                    {l.address ? <p className="text-xs text-mint/60">{l.address}</p> : null}
+                  </div>
+                  <select
+                    className="field-input max-w-[11rem] py-1 text-xs"
+                    value={l.status}
+                    onChange={(e) => setLeadStatus(l.id, e.target.value as Lead["status"])}
+                  >
+                    {STAGES.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {l.status === "Nieuw" ? (
+                    <Button size="sm" variant="mint" onClick={() => requestMatch(l.id)}>
+                      Match {p?.name ?? "partner"}
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-mint/70">{p?.name ?? "geen partner"}</span>
+                  )}
+                  <button type="button" className="ml-auto text-xs text-red-300" onClick={() => deleteLead(l.id)}>
+                    Verwijder
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </section>
   );
@@ -284,46 +302,37 @@ function Keuring() {
   const { partners, setPartnerStatus, setPartnerExclusive } = useMatchdesk();
   const queue = partners.filter((p) => !p.example && (p.status === "Te beoordelen" || p.exclusivePaid));
   return (
-    <section className="rounded-lg border border-line bg-white p-6">
-      <h2 className="text-2xl">Keuring</h2>
-      <p className="mt-1 text-sm text-muted">
-        Betalen plaatst niemand op de site. Alleen jij zet op Actief. Badge alleen bij Actief + keuring betaald.
-      </p>
+    <section>
+      <h2 className="font-display text-2xl">Keuring</h2>
+      <p className="mt-1 text-sm text-mint/70">Betalen plaatst niemand live. Jij zet op Actief. Badge alleen bij Actief + keuring betaald.</p>
       {queue.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">Geen open keuringen.</p>
+        <p className="mt-4 text-sm text-mint/70">Geen open keuringen.</p>
       ) : (
-        <ul className="mt-4 space-y-4">
+        <ul className="mt-4 space-y-3">
           {queue.map((p) => (
-            <li key={p.id} className="rounded-md border border-line p-4">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <strong className="font-display text-lg">{p.name}</strong>
-                  <p className="text-xs text-muted">
-                    {p.email} · KvK {p.kvk} · {p.prefixes.map((x) => `${x}xx`).join(", ")}
-                  </p>
-                  <p className="mt-1 text-xs">
-                    Status {p.status} · keuring {p.exclusivePaid ? "betaald" : "niet betaald"}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => setPartnerStatus(p.id, "Actief")}>
-                    Toelaten (live)
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setPartnerStatus(p.id, "Gepauzeerd")}>
-                    Pauzeren
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setPartnerExclusive(p.id, !p.exclusivePaid)}>
-                    {p.exclusivePaid ? "Badge uit" : "Badge aan"}
-                  </Button>
-                </div>
+            <li key={p.id} className="rounded-lg border border-white/10 bg-deep p-4">
+              <strong className="font-display text-lg">{p.name}</strong>
+              <p className="text-xs text-mint/60">
+                {p.email} · KvK {p.kvk} · {p.prefixes.map((x) => `${x}xx`).join(", ")}
+              </p>
+              <p className="mt-1 text-xs">
+                {p.status} · keuring {p.exclusivePaid ? "betaald" : "niet betaald"}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="mint" onClick={() => setPartnerStatus(p.id, "Actief")}>
+                  Toelaten (live)
+                </Button>
+                <Button size="sm" variant="onDark" onClick={() => setPartnerStatus(p.id, "Gepauzeerd")}>
+                  Pauzeren
+                </Button>
+                <Button size="sm" variant="onDark" onClick={() => setPartnerExclusive(p.id, !p.exclusivePaid)}>
+                  {p.exclusivePaid ? "Badge uit" : "Badge aan"}
+                </Button>
               </div>
             </li>
           ))}
         </ul>
       )}
-      <p className="mt-6 text-xs text-muted">
-        Voorbeeldrapport: /voorbeeld-rapport · Badge-pakket: /voorbeeld-badge
-      </p>
     </section>
   );
 }
@@ -337,19 +346,19 @@ function Installateurs() {
   const [prefixes, setPrefixes] = useState("");
   const [product, setProduct] = useState<Product>("Zonnepanelen");
   return (
-    <section className="rounded-lg border border-line bg-white p-6">
+    <section>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl">Installateurs</h2>
-          <p className="text-sm text-muted">Toelaten, pauzeren, archiveren, toevoegen of verwijderen.</p>
+          <h2 className="font-display text-2xl">Bedrijven</h2>
+          <p className="text-sm text-mint/70">Toelaten, pauzeren, archiveren of verwijderen.</p>
         </div>
-        <Button size="sm" onClick={() => setOpen((v) => !v)}>
-          {open ? "Sluit" : "Installateur toevoegen"}
+        <Button size="sm" variant="mint" onClick={() => setOpen((v) => !v)}>
+          {open ? "Sluit" : "Toevoegen"}
         </Button>
       </div>
       {open ? (
         <form
-          className="mt-4 grid gap-3 rounded-md border border-line p-4 md:grid-cols-2"
+          className="mt-4 grid gap-3 rounded-lg border border-white/10 bg-deep p-4 md:grid-cols-2"
           onSubmit={(e) => {
             e.preventDefault();
             submitPartner({
@@ -376,46 +385,33 @@ function Installateurs() {
               <option key={p}>{p}</option>
             ))}
           </select>
-          <Button type="submit">Opslaan</Button>
+          <Button type="submit" variant="mint">Opslaan</Button>
         </form>
       ) : null}
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         {partners.map((p) => (
-          <article key={p.id} className="rounded-md border border-line p-4">
+          <article key={p.id} className="rounded-lg border border-white/10 bg-deep p-4">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display text-lg">{p.name}</h3>
-              <span className="rounded-full bg-paper px-2 py-0.5 text-[11px] font-semibold text-teal">{p.status}</span>
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-mint">{p.status}</span>
             </div>
-            <p className="mt-1 text-sm text-muted">{p.products.join(" · ")}</p>
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1 text-sm text-mint/70">{p.products.join(" · ")}</p>
+            <p className="mt-1 text-xs text-mint/50">
               {p.email} · KvK {p.kvk} · {p.prefixes.map((x) => `${x}xx`).join(", ")}
             </p>
-            <p className="mt-1 text-xs text-muted">Capaciteit {p.capacity} · kwaliteit {p.quality || "—"}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {p.status !== "Actief" ? (
-                <Button size="sm" onClick={() => setPartnerStatus(p.id, "Actief")}>
-                  Toelaten
-                </Button>
+                <Button size="sm" variant="mint" onClick={() => setPartnerStatus(p.id, "Actief")}>Toelaten</Button>
               ) : (
-                <Button size="sm" variant="ghost" onClick={() => setPartnerStatus(p.id, "Gepauzeerd")}>
-                  Pauzeren
-                </Button>
+                <Button size="sm" variant="onDark" onClick={() => setPartnerStatus(p.id, "Gepauzeerd")}>Pauzeren</Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => setPartnerStatus(p.id, "Gearchiveerd")}>
-                Archiveren
-              </Button>
-              <button type="button" className="text-xs text-red-700" onClick={() => deletePartner(p.id)}>
-                Verwijder
-              </button>
+              <Button size="sm" variant="onDark" onClick={() => setPartnerStatus(p.id, "Gearchiveerd")}>Archiveren</Button>
+              <button type="button" className="text-xs text-red-300" onClick={() => deletePartner(p.id)}>Verwijder</button>
             </div>
-            {p.example ? <p className="mt-2 text-xs text-muted">Voorbeeldbedrijf — niet zichtbaar op de publieke lijst</p> : null}
+            {p.example ? <p className="mt-2 text-xs text-mint/50">Voorbeeld — niet publiek</p> : null}
             <label className="mt-3 flex items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                checked={Boolean(p.exclusivePaid)}
-                onChange={(e) => setPartnerExclusive(p.id, e.target.checked)}
-              />
-              Exclusief-proof betaald
+              <input type="checkbox" className="accent-bright" checked={Boolean(p.exclusivePaid)} onChange={(e) => setPartnerExclusive(p.id, e.target.checked)} />
+              Badge / keuring betaald
             </label>
           </article>
         ))}
@@ -428,33 +424,27 @@ function Afspraken() {
   const { leads, partners, confirmAppointment, cancelAppointment } = useMatchdesk();
   const rows = leads.filter((l) => l.appointment);
   return (
-    <section className="rounded-lg border border-line bg-white p-6">
-      <h2 className="text-2xl">Afspraken</h2>
-      <p className="text-sm text-muted">Bevestigen of annuleren.</p>
+    <section>
+      <h2 className="font-display text-2xl">Afspraken</h2>
+      <p className="text-sm text-mint/70">Bevestigen of annuleren.</p>
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">Nog geen afspraken gepland.</p>
+        <p className="mt-4 text-sm text-mint/70">Nog geen afspraken.</p>
       ) : (
-        <ul className="mt-4 divide-y divide-line text-sm">
+        <ul className="mt-4 space-y-3">
           {rows.map((l) => {
             const p = partners.find((x) => x.id === l.partnerId);
             return (
-              <li key={l.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <span>
-                  <strong>{l.name}</strong> · {l.appointment?.date} {l.appointment?.time} · {l.appointment?.status}
-                  <small className="mt-1 block text-xs text-muted">
-                    {l.product} · {p?.name ?? "geen match"} · {l.email}
-                  </small>
-                </span>
-                <span className="flex gap-2">
+              <li key={l.id} className="rounded-lg border border-white/10 bg-deep p-4">
+                <strong>{l.name}</strong>
+                <p className="text-xs text-mint/60">
+                  {l.appointment?.date} {l.appointment?.time} · {l.appointment?.status} · {p?.name ?? "geen match"}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
                   {l.appointment?.status !== "Bevestigd" ? (
-                    <Button size="sm" onClick={() => confirmAppointment(l.id)}>
-                      Bevestig
-                    </Button>
+                    <Button size="sm" variant="mint" onClick={() => confirmAppointment(l.id)}>Bevestig</Button>
                   ) : null}
-                  <Button size="sm" variant="ghost" onClick={() => cancelAppointment(l.id)}>
-                    Annuleer
-                  </Button>
-                </span>
+                  <Button size="sm" variant="onDark" onClick={() => cancelAppointment(l.id)}>Annuleer</Button>
+                </div>
               </li>
             );
           })}
@@ -467,28 +457,26 @@ function Afspraken() {
 function Nieuwsbrief() {
   const { subscribers, deleteSubscriber } = useMatchdesk();
   return (
-    <section className="rounded-lg border border-line bg-white p-6">
+    <section>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl">Nieuwsbrief</h2>
-          <p className="text-sm text-muted">{subscribers.length} aanmeldingen</p>
+          <h2 className="font-display text-2xl">Nieuwsbrief</h2>
+          <p className="text-sm text-mint/70">{subscribers.length} aanmeldingen</p>
         </div>
         {subscribers.length ? <CopyList emails={subscribers.map((s) => s.email)} /> : null}
       </div>
       {subscribers.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">Nog niemand ingeschreven.</p>
+        <p className="mt-4 text-sm text-mint/70">Nog niemand ingeschreven.</p>
       ) : (
-        <ul className="mt-4 divide-y divide-line text-sm">
+        <ul className="mt-4 space-y-2">
           {subscribers.map((s) => (
-            <li key={s.email} className="flex flex-wrap items-baseline justify-between gap-2 py-3">
+            <li key={s.email} className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-white/10 bg-deep px-4 py-3 text-sm">
               <span>
                 <strong>{s.name || "—"}</strong> · {s.email}
               </span>
-              <span className="flex items-center gap-3 text-xs text-muted">
+              <span className="flex items-center gap-3 text-xs text-mint/50">
                 {new Date(s.createdAt).toLocaleDateString("nl-NL")}
-                <button type="button" className="text-red-700" onClick={() => deleteSubscriber(s.email)}>
-                  Verwijder
-                </button>
+                <button type="button" className="text-red-300" onClick={() => deleteSubscriber(s.email)}>Verwijder</button>
               </span>
             </li>
           ))}
@@ -508,88 +496,58 @@ function Website() {
       .catch(() => setHealth("Auth niet bereikbaar"));
   }, []);
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <section className="rounded-lg border border-line bg-white p-6">
-        <h2 className="text-2xl">Status</h2>
-        <ul className="mt-4 space-y-2 text-sm">
-          <li>Domein: www.getmatchdesk.nl</li>
+    <div className="grid gap-4 lg:grid-cols-2">
+      <section className="rounded-lg border border-white/10 bg-deep p-5">
+        <h2 className="font-display text-xl">Status</h2>
+        <ul className="mt-4 space-y-2 text-sm text-mint/80">
+          <li>www.getmatchdesk.nl</li>
           <li>{health}</li>
-          <li>Google-login: ingesteld</li>
-          <li>E-mail/wachtwoord: aan</li>
-          <li>Stripe woningscan: gekoppeld</li>
-          <li>Stripe early-bird: gekoppeld</li>
+          <li>Google + e-mail login</li>
+          <li>Stripe woningscan + badge gekoppeld</li>
         </ul>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button asChild size="sm">
-            <a href={STRIPE.woningscan} target="_blank" rel="noreferrer">
-              Stripe woningscan
-            </a>
-          </Button>
-          <Button asChild size="sm" variant="ghost">
-            <a href={STRIPE.exclusief} target="_blank" rel="noreferrer">
-              Stripe early-bird
-            </a>
-          </Button>
-          <Button asChild size="sm" variant="ghost">
-            <Link to="/rapport">Rapportpagina</Link>
-          </Button>
-          <Button asChild size="sm" variant="ghost">
-            <Link to="/exclusief">Exclusief-proof</Link>
-          </Button>
-          <Button asChild size="sm" variant="ghost">
-            <Link to="/installateurs">Publieke lijst</Link>
-          </Button>
+          <Button asChild size="sm" variant="onDark"><a href={STRIPE.woningscan} target="_blank" rel="noreferrer">Stripe scan</a></Button>
+          <Button asChild size="sm" variant="onDark"><a href={STRIPE.exclusief} target="_blank" rel="noreferrer">Stripe badge</a></Button>
         </div>
       </section>
-      <section className="rounded-lg border border-line bg-white p-6">
-        <h2 className="text-2xl">Sturing</h2>
+      <section className="rounded-lg border border-white/10 bg-deep p-5">
+        <h2 className="font-display text-xl">Sturing</h2>
         <label className="mt-4 flex items-center gap-3 text-sm">
-          <input type="checkbox" checked={matchingPaused} onChange={(e) => setMatchingPaused(e.target.checked)} />
-          Matching pauzeren (geen nieuwe matches)
+          <input type="checkbox" className="accent-bright" checked={matchingPaused} onChange={(e) => setMatchingPaused(e.target.checked)} />
+          Matching pauzeren
         </label>
-        <label className="mt-4 block text-sm">
-          Melding op de site
-          <textarea
-            className="field-input mt-1 min-h-24"
-            value={notice}
-            onChange={(e) => setNotice(e.target.value)}
-            placeholder="Bijv. Tijdelijk geen nieuwe matches in Friesland."
-          />
-        </label>
-        <Button className="mt-3" size="sm" onClick={() => setSiteNotice(notice)}>
+        <textarea
+          className="field-input mt-3 min-h-24"
+          value={notice}
+          onChange={(e) => setNotice(e.target.value)}
+          placeholder="Melding op de site, bijv. geen matches in Friesland."
+        />
+        <Button className="mt-3" size="sm" variant="mint" onClick={() => setSiteNotice(notice)}>
           Melding opslaan
         </Button>
-        <p className="mt-4 text-sm text-muted">
-          Contact: {CONTACT.email} · KvK {CONTACT.kvk}
-        </p>
-        <a className="text-sm font-semibold text-teal" href={CONTACT.whatsapp} target="_blank" rel="noreferrer">
-          WhatsApp
-        </a>
+        <p className="mt-4 text-xs text-mint/50">{CONTACT.email} · KvK {CONTACT.kvk}</p>
       </section>
-      <section className="rounded-lg border border-line bg-white p-6 lg:col-span-2">
-        <h2 className="text-2xl">Pagina’s en data</h2>
+      <section className="rounded-lg border border-white/10 bg-deep p-5 lg:col-span-2">
+        <h2 className="font-display text-xl">Pagina’s</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {[
             ["Home", "/"],
+            ["Woning", "/woning"],
+            ["Bedrijven", "/voor-bedrijven"],
             ["Aanvragen", "/aanvragen"],
-            ["Login", "/login"],
-            ["Klant", "/klant"],
-            ["Bedrijf", "/bedrijf"],
-            ["Installateurs", "/installateurs"],
-            ["Rapport", "/rapport"],
-            ["Exclusief", "/exclusief"],
+            ["Aanmelden", "/aanmelden"],
+            ["Rapport", "/voorbeeld-rapport"],
+            ["Badge", "/voorbeeld-badge"],
+            ["Lijst", "/installateurs"],
             ["Blog", "/blog"],
-            ["Tools", "/tools"],
-            ["Nieuwsbrief", "/nieuwsbrief"],
-            ["Wachtlijst", "/wachtlijst"],
           ].map(([label, href]) => (
-            <Button key={href} asChild size="sm" variant="ghost">
+            <Button key={href} asChild size="sm" variant="onDark">
               <a href={href}>{label}</a>
             </Button>
           ))}
         </div>
-        <Button className="mt-4" size="sm" variant="ghost" onClick={() => exportWorkspace()}>
-          Exporteer alle data (JSON)
+        <Button className="mt-4" size="sm" variant="onDark" onClick={() => exportWorkspace()}>
+          Exporteer data (JSON)
         </Button>
       </section>
     </div>
@@ -611,9 +569,9 @@ function Notities() {
   const { notes, addNote, deleteNote } = useMatchdesk();
   const [text, setText] = useState("");
   return (
-    <section className="rounded-lg border border-line bg-white p-6">
-      <h2 className="text-2xl">Notities</h2>
-      <p className="text-sm text-muted">Alleen jij ziet dit. Voor opvolging, belafspraken, open punten.</p>
+    <section>
+      <h2 className="font-display text-2xl">Notities</h2>
+      <p className="text-sm text-mint/70">Alleen in dit beheer. Opvolging, belafspraken, open punten.</p>
       <form
         className="mt-4 flex flex-col gap-2 sm:flex-row"
         onSubmit={(e) => {
@@ -623,21 +581,19 @@ function Notities() {
         }}
       >
         <input className="field-input flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder="Nieuwe notitie" />
-        <Button type="submit">Toevoegen</Button>
+        <Button type="submit" variant="mint">Toevoegen</Button>
       </form>
       {notes.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">Nog geen notities.</p>
+        <p className="mt-4 text-sm text-mint/70">Nog geen notities.</p>
       ) : (
-        <ul className="mt-4 divide-y divide-line">
+        <ul className="mt-4 space-y-2">
           {notes.map((n) => (
-            <li key={n.id} className="flex items-start justify-between gap-3 py-3 text-sm">
+            <li key={n.id} className="flex items-start justify-between gap-3 rounded-lg border border-white/10 bg-deep px-4 py-3 text-sm">
               <span>
                 {n.text}
-                <small className="mt-1 block text-xs text-muted">{new Date(n.createdAt).toLocaleString("nl-NL")}</small>
+                <small className="mt-1 block text-xs text-mint/50">{new Date(n.createdAt).toLocaleString("nl-NL")}</small>
               </span>
-              <button type="button" className="text-xs text-red-700" onClick={() => deleteNote(n.id)}>
-                Weg
-              </button>
+              <button type="button" className="text-xs text-red-300" onClick={() => deleteNote(n.id)}>Weg</button>
             </li>
           ))}
         </ul>
@@ -646,11 +602,11 @@ function Notities() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
   return (
-    <div className="rounded-lg border border-line bg-white p-5">
-      <small className="text-[11px] uppercase tracking-wider text-muted">{label}</small>
-      <strong className="mt-1 block font-display text-3xl tabular-nums">{value}</strong>
+    <div className="rounded-lg border border-white/10 bg-deep p-4">
+      <small className="text-[11px] uppercase tracking-wider text-mint/50">{label}</small>
+      <strong className={`mt-1 block font-display text-2xl tabular-nums md:text-3xl ${warn ? "text-amber" : ""}`}>{value}</strong>
     </div>
   );
 }
@@ -660,7 +616,7 @@ function CopyList({ emails }: { emails: string[] }) {
   return (
     <Button
       size="sm"
-      variant="ghost"
+      variant="onDark"
       onClick={async () => {
         await navigator.clipboard.writeText(emails.join("\n"));
         setDone(true);

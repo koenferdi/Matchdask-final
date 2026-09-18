@@ -113,6 +113,16 @@
   border-color: var(--color-teal);
 }
 
+.cockpit .field-input {
+  background: #11252a;
+  border-color: rgb(255 255 255 / 0.14);
+  color: #f3f6f5;
+}
+.cockpit .field-input option {
+  background: #11252a;
+  color: #f3f6f5;
+}
+
 .cinema-film {
   position: relative;
   isolation: isolate;
