@@ -57,7 +57,6 @@ mkdir -p .output/public/higgsfield
 cp -f public/higgsfield/* .output/public/higgsfield/ 2>/dev/null || true
 cp -f public/home.webp .output/public/home.webp 2>/dev/null || true
 systemctl restart matchdesk
-bash /opt/matchdesk/fix-www.sh 2>/dev/null || curl -fsSL "$BASE/fix-www.sh" | bash
 echo HERO_DONE
 echo GATE_PHOTO
 

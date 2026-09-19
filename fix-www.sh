@@ -7,8 +7,13 @@ if [[ ! -f "$CERT/fullchain.pem" ]]; then
   CERT=$(ls -d /etc/letsencrypt/live/*/ 2>/dev/null | head -1)
   CERT=${CERT%/}
 fi
+if [[ ! -f "${CERT}/fullchain.pem" ]]; then
+  echo "Geen Let's Encrypt cert gevonden. Nginx ongemoeid."
+  exit 0
+fi
 PUB=/opt/matchdesk/.output/public
-cp -a /etc/nginx/nginx.conf "/etc/nginx/nginx.conf.bak.$(date +%s)" || true
+BAK="/etc/nginx/nginx.conf.bak.$(date +%s)"
+cp -a /etc/nginx/nginx.conf "$BAK" || true
 cat >/etc/nginx/nginx.conf <<NGX
 user www-data;
 worker_processes auto;
@@ -30,16 +35,16 @@ http {
     return 301 https://www.getmatchdesk.nl\$request_uri;
   }
   server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
     server_name getmatchdesk.nl;
     ssl_certificate ${CERT}/fullchain.pem;
     ssl_certificate_key ${CERT}/privkey.pem;
     return 301 https://www.getmatchdesk.nl\$request_uri;
   }
   server {
-    listen 443 ssl http2 default_server;
-    listen [::]:443 ssl http2 default_server;
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
     server_name www.getmatchdesk.nl _;
     ssl_certificate ${CERT}/fullchain.pem;
     ssl_certificate_key ${CERT}/privkey.pem;
@@ -65,6 +70,12 @@ http {
   }
 }
 NGX
-nginx -t
+if ! nginx -t; then
+  echo "Nieuwe nginx-config faalt. Backup terug."
+  cp -a "$BAK" /etc/nginx/nginx.conf
+  nginx -t
+  systemctl start nginx || systemctl restart nginx || true
+  exit 1
+fi
 systemctl restart nginx
 echo WWW_DONE
