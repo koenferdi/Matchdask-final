@@ -384,7 +384,7 @@ main.home-reveal > section:not(.cinema-film).is-in {
 }
 
 .path-gate {
-  min-height: 100svh;
+  min-height: calc(100svh - 7.5rem);
   background: var(--color-night);
   color: var(--color-paper);
 }

@@ -1,61 +1,86 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Compass, Home, Wrench } from "lucide-react";
 import { Wrap } from "@/components/site-shell";
+import { cn } from "@/lib/cn";
 
 export const PATHS = [
-  {
-    to: "/" as const,
-    key: "orientatie",
-    kicker: "ORIËNTATIE",
-    title: "Ik kijk nog rond",
-    body: "Hoe matching werkt, tools en inzichten. Geen account nodig.",
-  },
   {
     to: "/woning" as const,
     key: "woning",
     kicker: "WONING",
     title: "Ik zoek een installateur",
-    body: "Eén aanvraag. Eén match. Rapport en afspraak als jij dat wilt.",
+    body: "Eén aanvraag. Eén match. Rapport als jij dat wilt.",
+    icon: Home,
+    featured: true,
   },
   {
     to: "/voor-bedrijven" as const,
     key: "bedrijf",
     kicker: "BEDRIJF",
     title: "Ik installeer",
-    body: "Gratis aanmelden. 1:1-aanvragen in jouw postcodes. Geen veiling.",
+    body: "Gratis aanmelden. 1:1-aanvragen in jouw postcodes.",
+    icon: Wrench,
+    featured: false,
+  },
+  {
+    to: "/" as const,
+    key: "orientatie",
+    kicker: "ORIËNTATIE",
+    title: "Ik kijk nog rond",
+    body: "Hoe matching werkt. Geen account nodig.",
+    icon: Compass,
+    featured: false,
   },
 ] as const;
 
 export function PathGate({ onStay }: { onStay: () => void }) {
   const navigate = useNavigate();
   return (
-    <main className="path-gate flex flex-col justify-center px-5 py-16 md:px-16">
-      <div className="mx-auto w-full max-w-[1100px]">
-        <p className="text-[12px] font-semibold tracking-[0.16em] text-mint">MATCHDESK</p>
-        <h1 className="mt-4 font-display text-[clamp(2.4rem,6vw,4.6rem)] leading-[1.05]">
+    <main className="path-gate px-5 pb-16 pt-8 md:px-16 md:pt-12">
+      <div className="mx-auto w-full max-w-xl lg:max-w-5xl">
+        <h1 className="font-display text-[clamp(2rem,7vw,3.6rem)] leading-[1.08]">
           Waarvoor kom je?
         </h1>
-        <p className="mt-4 max-w-xl text-lg text-mint/75">
-          Kies je pad. Daarna openen we de juiste pagina.
+        <p className="mt-3 max-w-md text-base text-mint/75 md:text-lg">
+          Kies één pad. Daarna openen we de juiste pagina.
         </p>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {PATHS.map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              className="path-gate-card rounded-lg border border-white/12 bg-deep p-6 text-left"
-              onClick={() => {
-                if (p.to === "/") onStay();
-                else void navigate({ to: p.to });
-              }}
-            >
-              <span className="text-[11px] tracking-[0.14em] text-mint/60">{p.kicker}</span>
-              <strong className="mt-3 flex items-center justify-between gap-2 font-display text-2xl">
-                {p.title} <ArrowRight className="size-5 shrink-0 text-bright" />
-              </strong>
-              <p className="mt-3 text-sm leading-6 text-mint/70">{p.body}</p>
-            </button>
-          ))}
+        <div className="mt-8 grid gap-3 lg:grid-cols-3 lg:gap-4">
+          {PATHS.map((p) => {
+            const Icon = p.icon;
+            return (
+              <button
+                key={p.key}
+                type="button"
+                className={cn(
+                  "path-gate-card flex items-start gap-4 rounded-lg border p-5 text-left lg:flex-col lg:p-6",
+                  p.featured
+                    ? "border-bright/40 bg-mint/10"
+                    : "border-white/12 bg-deep",
+                )}
+                onClick={() => {
+                  if (p.to === "/") onStay();
+                  else void navigate({ to: p.to });
+                }}
+              >
+                <span
+                  className={cn(
+                    "flex size-11 shrink-0 items-center justify-center rounded-md",
+                    p.featured ? "bg-mint text-night" : "bg-white/8 text-mint",
+                  )}
+                >
+                  <Icon className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="text-[11px] font-semibold tracking-[0.14em] text-mint/55">{p.kicker}</span>
+                  <strong className="mt-1 flex items-center justify-between gap-2 font-display text-xl leading-snug lg:text-2xl">
+                    {p.title}
+                    <ArrowRight className="size-5 shrink-0 text-bright" />
+                  </strong>
+                  <p className="mt-2 text-sm leading-6 text-mint/70">{p.body}</p>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </main>
