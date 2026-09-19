@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Calendar, Check, MapPin, Shield, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Wrap } from "@/components/site-shell";
+import { SoftLaunchWestBrabant } from "@/components/marketing/soft-launch-west-brabant";
 import { useMatchdesk } from "@/lib/store";
 import { ProofBadge } from "@/components/proof-badge";
 
@@ -30,6 +31,9 @@ function Installateurs() {
             <p className="mt-5 max-w-xl text-lg text-muted">
               Exclusieve aanvragen die passen bij je specialisme en werkgebied. Eén overzicht voor je projecten, planning en commissie.
             </p>
+            <div className="mt-6">
+              <SoftLaunchWestBrabant ctaHref="/aanmelden" taken={0} />
+            </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild variant="mint">
                 <Link to="/aanmelden">Meld je bedrijf aan</Link>

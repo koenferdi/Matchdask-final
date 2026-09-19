@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
+import { SoftLaunchWestBrabant } from "@/components/marketing/soft-launch-west-brabant";
 import { PRODUCTS, type Product } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 
@@ -89,11 +90,14 @@ function Aanmelden() {
         <PageIntro kicker="Gratis aanmelden" title="Jouw bedrijf. Ons netwerk.">
           Geen inschrijfgeld. Je vult KvK, vak en werkgebied in. Daarna beoordelen wij. Een badge is later optioneel.
         </PageIntro>
-        <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
+        <div className="mt-8">
+          <SoftLaunchWestBrabant ctaHref="#aanmelden" taken={0} />
+        </div>
+        <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_320px]">
           <section className="rounded-lg border border-line bg-white p-8">
             <h2 className="text-2xl">Vertel ons wie je bent.</h2>
             <p className="mt-1 text-sm text-muted">De aanmelding wordt opgeslagen en verschijnt in beheer ter beoordeling.</p>
-            <form onSubmit={onSubmit} className="mt-6 space-y-4">
+            <form id="aanmelden" onSubmit={onSubmit} className="mt-6 space-y-4">
               <label className="block text-sm font-semibold">
                 Bedrijfsnaam
                 <input name="name" required autoComplete="organization" placeholder="Naam installatiebedrijf" className="field-input mt-1.5" />
