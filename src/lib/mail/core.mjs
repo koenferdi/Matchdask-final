@@ -624,6 +624,27 @@ export function markKeySent(ledger, key, now) {
  * Gaps: older Resend attempts without outbox entries only show keys/timestamps;
  * subject/to may be reconstructed from partners/leads when linked.
  */
+const KEY_MISSING = "RESEND_API_KEY ontbreekt";
+
+/** Maakt technische verzendfouten leesbaar voor de eigenaar. Oude ledger-regels blijven zo ook begrijpelijk. */
+export function readableMailReason(reason) {
+  if (!reason) return null;
+  const text = String(reason);
+  if (text === KEY_MISSING) return "Niet verstuurd: er was geen Resend-sleutel ingesteld.";
+  if (text === "verzenden mislukt") return "Niet verstuurd: Resend was niet bereikbaar.";
+  const code = /^Resend (\d{3})$/.exec(text)?.[1];
+  if (code === "401" || code === "403") return `Resend weigerde de mail: sleutel ongeldig of ingetrokken (code ${code}).`;
+  if (code === "422") return `Resend weigerde de mail: afzender of adres niet geaccepteerd (code ${code}).`;
+  if (code) return `Resend weigerde de mail (code ${code}).`;
+  return text;
+}
+
+/** "queued" betekende ook "overgeslagen zonder sleutel". Die mail komt nooit meer, dus dat is geen wachten. */
+function outboxStatus(entry) {
+  if (entry.status === "queued" && entry.reason === KEY_MISSING) return "skipped";
+  return entry.status || "unknown";
+}
+
 export function listMailActivity({ ledger, partners, leads, limit = 100 } = {}) {
   const book = normalizeLedger(ledger);
   const partnerById = new Map((partners || []).map((p) => [p.id, p]));
@@ -638,8 +659,8 @@ export function listMailActivity({ ledger, partners, leads, limit = 100 } = {}) 
       to: entry.to || "",
       subject: entry.subject || "",
       type: entry.type || "overig",
-      status: entry.status || "unknown",
-      reason: entry.reason || null,
+      status: outboxStatus(entry),
+      reason: readableMailReason(entry.reason),
       partnerId: entry.partnerId || null,
       leadId: entry.leadId || null,
       company: entry.partnerId ? partnerById.get(entry.partnerId)?.name || null : null,
@@ -658,8 +679,8 @@ export function listMailActivity({ ledger, partners, leads, limit = 100 } = {}) 
         to: partner?.email || "",
         subject: "Activeer je Matchdesk-account",
         type: "activatie",
-        status: "queued",
-        reason: "Link aangemaakt in ledger (verzending niet altijd bevestigd).",
+        status: "unknown",
+        reason: "Activatielink aangemaakt. Niet vastgelegd of de mail ook verstuurd is.",
         partnerId: row.partnerId,
         leadId: null,
         company: partner?.name || null,
@@ -740,7 +761,7 @@ export function listMailActivity({ ledger, partners, leads, limit = 100 } = {}) 
       subject: lead?.product ? `Nieuwe klus — ${lead.product}` : "Nieuwe klus",
       type: "klus",
       status: "queued",
-      reason: "Wacht op Actief bedrijf of geldig e-mailadres.",
+      reason: "Wacht tot het bedrijf actief is en een geldig e-mailadres heeft.",
       partnerId: job.partnerId,
       leadId: job.leadId,
       company: partner?.name || null,
@@ -786,9 +807,7 @@ export function listMailActivity({ ledger, partners, leads, limit = 100 } = {}) 
   return {
     rows: deduped.slice(0, Math.max(1, Number(limit) || 100)),
     gaps: [
-      "Resend-leveringsstatus (opens/bounces) staat niet in dit logboek.",
-      "Voor entries zonder outbox-regel komen status en onderwerp uit de mail-ledger-sleutels.",
-      "Activatiemail in de ledger betekent ‘link aangemaakt’; verzenden kan alsnog mislukt zijn zonder RESEND_API_KEY.",
+      "Je ziet hier of een mail verstuurd is, niet of hij is aangekomen of geopend. Dat zie je in Resend.",
     ],
   };
 }

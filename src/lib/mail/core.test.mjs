@@ -18,6 +18,7 @@ import {
   renderJobEmail,
   renderMessageEmail,
   listMailActivity,
+  readableMailReason,
   appendOutbox,
 } from "./core.mjs";
 
@@ -311,4 +312,49 @@ test("listMailActivity toont outbox en ledger-sleutels", () => {
   assert.ok(listed.rows.some((row) => row.type === "activatie" && row.status === "sent"));
   assert.ok(listed.rows.some((row) => row.type === "klus" && row.status === "queued"));
   assert.ok(listed.gaps.length >= 1);
+});
+
+test("mailoverzicht: overgeslagen zonder sleutel is niet hetzelfde als wachten", () => {
+  let ledger = emptyLedger();
+  ledger = appendOutbox(ledger, {
+    to: "info@rdsolargroup.nl",
+    subject: "Activeer je Matchdesk-account",
+    type: "activatie",
+    status: "queued",
+    reason: "RESEND_API_KEY ontbreekt",
+    partnerId: "P-RD",
+    at: "2026-09-22T08:00:00.000Z",
+  });
+  ledger = { ...ledger, pendingJobs: [{ leadId: "MD-2", partnerId: "P-RD" }] };
+  const listed = listMailActivity({
+    ledger,
+    partners: [partner({ status: "Actief" })],
+    leads: [lead({ id: "MD-2", partnerId: "P-RD" })],
+  });
+  const skipped = listed.rows.find((row) => row.type === "activatie");
+  assert.equal(skipped.status, "skipped");
+  assert.equal(skipped.reason, "Niet verstuurd: er was geen Resend-sleutel ingesteld.");
+  assert.ok(listed.rows.some((row) => row.type === "klus" && row.status === "queued"));
+  for (const gap of listed.gaps) assert.doesNotMatch(gap, /RESEND_API_KEY|ledger|outbox/);
+});
+
+test("mailoverzicht: activatie uit de ledger heet onbekend, niet in wachtrij", () => {
+  const ledger = {
+    ...emptyLedger(),
+    byPartner: { "P-RD": { partnerId: "P-RD", sentAt: "2026-09-22T08:00:00.000Z" } },
+  };
+  const listed = listMailActivity({ ledger, partners: [partner()], leads: [] });
+  const row = listed.rows.find((r) => r.type === "activatie");
+  assert.equal(row.status, "unknown");
+  assert.doesNotMatch(row.reason, /ledger/);
+});
+
+test("verzendfouten zijn leesbaar", () => {
+  assert.equal(readableMailReason(null), null);
+  assert.match(readableMailReason("Resend 401"), /sleutel ongeldig/);
+  assert.match(readableMailReason("Resend 403"), /code 403/);
+  assert.match(readableMailReason("Resend 422"), /afzender of adres/);
+  assert.equal(readableMailReason("Resend 500"), "Resend weigerde de mail (code 500).");
+  assert.match(readableMailReason("verzenden mislukt"), /niet bereikbaar/);
+  assert.equal(readableMailReason("iets anders"), "iets anders");
 });

@@ -702,11 +702,11 @@ function MailLog() {
     void fetch("/api/mail/log?limit=100", { credentials: "include" })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Mail-log niet beschikbaar.");
+        if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Mailoverzicht kon niet laden.");
         setRows(Array.isArray(data.rows) ? data.rows : []);
         setGaps(Array.isArray(data.gaps) ? data.gaps : []);
       })
-      .catch((err: Error) => setError(err.message || "Mail-log niet beschikbaar."))
+      .catch((err: Error) => setError(err.message || "Mailoverzicht kon niet laden."))
       .finally(() => setLoading(false));
   }
 
@@ -717,7 +717,8 @@ function MailLog() {
   const statusLabel: Record<string, string> = {
     sent: "Verzonden",
     failed: "Mislukt",
-    queued: "In wachtrij",
+    skipped: "Niet verstuurd",
+    queued: "Wacht",
     unknown: "Onbekend",
   };
 
@@ -727,7 +728,7 @@ function MailLog() {
         <div>
           <h2 className="font-display text-2xl">Mail</h2>
           <p className="text-sm text-mint/70">
-            Recent outbound verkeer: activatie, bevestiging, klus en bericht. Bron: mail-ledger + outbox.
+            Mails die Matchdesk naar installateurs stuurt: activatie, bevestiging, nieuwe klus en bericht.
           </p>
         </div>
         <Button size="sm" variant="onDark" onClick={() => reload()} disabled={loading}>
@@ -747,7 +748,7 @@ function MailLog() {
         </ul>
       ) : null}
       {!loading && rows.length === 0 && !error ? (
-        <p className="mt-4 text-sm text-mint/70">Nog geen mailactiviteit in de ledger.</p>
+        <p className="mt-4 text-sm text-mint/70">Nog geen mails verstuurd.</p>
       ) : null}
       {rows.length ? (
         <ul className="mt-4 space-y-3">
@@ -773,7 +774,7 @@ function MailLog() {
                   className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                     row.status === "sent"
                       ? "bg-mint/20 text-mint"
-                      : row.status === "failed"
+                      : row.status === "failed" || row.status === "skipped"
                         ? "bg-red-400/20 text-red-200"
                         : "bg-white/10 text-mint/80"
                   }`}

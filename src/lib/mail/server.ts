@@ -129,12 +129,18 @@ export async function sendMail(message: Outbound, meta: MailMeta = {}): Promise<
 
 export function mailActivity(limit = 100) {
   const ws = readWorkspaceFile();
-  return listMailActivity({
+  const activity = listMailActivity({
     ledger: loadLedger(),
     partners: ws.partners,
     leads: ws.leads,
     limit,
   });
+  if (!process.env.RESEND_API_KEY?.trim()) {
+    activity.gaps.unshift(
+      "Er is geen Resend-sleutel ingesteld, dus er gaan nu geen mails de deur uit. Activatielinks worden wel aangemaakt.",
+    );
+  }
+  return activity;
 }
 
 export function activatedAtById() {
