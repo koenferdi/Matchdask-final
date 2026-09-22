@@ -19,6 +19,7 @@ function Aanmelden() {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const name = String(data.get("name") || "").trim();
+    const contactName = String(data.get("contact") || "").trim();
     const email = String(data.get("email") || "").trim();
     const kvk = String(data.get("kvk") || "").trim();
     const prefixes = String(data.get("prefixes") || "")
@@ -27,9 +28,10 @@ function Aanmelden() {
       .filter((p) => p.length === 2);
     const capacity = Number(data.get("capacity") || 3);
     if (!name || !email) return setError("Vul bedrijfsnaam en e-mail in.");
+    if (!/^[0-9]{8}$/.test(kvk)) return setError("Een KvK-nummer bestaat uit acht cijfers.");
     if (!products.length) return setError("Kies minstens één specialisme.");
     if (!prefixes.length) return setError("Vul postcodegebieden in, bijvoorbeeld 35 34 39.");
-    submitPartner({ name, email, kvk, products, prefixes, capacity });
+    submitPartner({ name, email, contactName: contactName || undefined, kvk, products, prefixes, capacity });
     setDone({ name, email });
   }
 
@@ -37,8 +39,8 @@ function Aanmelden() {
     return (
       <main className="bg-paper py-16 text-ink">
         <Wrap>
-          <PageIntro kicker="Aanmelding ontvangen · gratis" title="Binnen. Geen betaling nodig.">
-            Je bedrijf staat klaar voor beoordeling. Aanmelden kost niets. Een badge is later optioneel — niet nu.
+          <PageIntro kicker="Aanmelding ontvangen · gratis" title="Binnen. Nog niet actief.">
+            Status: Te beoordelen. We controleren KvK en werkgebied. Daarna sturen we een activatiemail. Pas na die link staat je bedrijf op Actief.
           </PageIntro>
           <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
             <section className="rounded-lg border border-line bg-white p-8">
@@ -47,7 +49,7 @@ function Aanmelden() {
               </div>
               <h2 className="text-3xl">Je aanmelding is binnen.</h2>
               <p className="mt-3 text-muted">
-                Matchdesk beoordeelt KvK, vak en werkgebied. Bij toelating ontvang je 1:1-aanvragen. Geen inschrijfgeld.
+                Er gaat nu nog geen activatiemail uit. Die volgt nadat KvK en werkgebied kloppen. Eén lead, één installateur. Eerste gewonnen klus €0, daarna 10%.
               </p>
               <div className="mt-6 flex gap-3">
                 <Button asChild>
@@ -104,14 +106,18 @@ function Aanmelden() {
               </label>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block text-sm font-semibold">
+                  Contactpersoon
+                  <input name="contact" autoComplete="name" placeholder="Voornaam" className="field-input mt-1.5" />
+                </label>
+                <label className="block text-sm font-semibold">
                   Zakelijk e-mailadres
                   <input name="email" required type="email" autoComplete="email" className="field-input mt-1.5" />
                 </label>
-                <label className="block text-sm font-semibold">
-                  KvK-nummer
-                  <input name="kvk" pattern="[0-9]{8}" inputMode="numeric" maxLength={8} placeholder="8 cijfers" className="field-input mt-1.5" />
-                </label>
               </div>
+              <label className="block text-sm font-semibold">
+                KvK-nummer
+                <input name="kvk" required pattern="[0-9]{8}" inputMode="numeric" maxLength={8} placeholder="8 cijfers" className="field-input mt-1.5" />
+              </label>
               <fieldset>
                 <legend className="text-sm font-semibold">Specialismen</legend>
                 <div className="mt-2 space-y-2">

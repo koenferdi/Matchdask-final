@@ -35,6 +35,83 @@ const LABELS: Record<Tab, string> = {
 
 type Search = { tab?: Tab };
 
+type GateRow = {
+  id: string;
+  sentAt?: string | null;
+  activatedAt?: string | null;
+  confirmationSentAt?: string | null;
+};
+
+type GateApi = {
+  rows: GateRow[];
+  note: string;
+  link: string;
+  busy: string;
+  send: (partnerId: string, resend?: boolean) => Promise<void>;
+  activated: (id: string) => boolean;
+  sent: (id: string) => boolean;
+};
+
+function usePartnerGate(): GateApi {
+  const [rows, setRows] = useState<GateRow[]>([]);
+  const [note, setNote] = useState("");
+  const [link, setLink] = useState("");
+  const [busy, setBusy] = useState("");
+
+  function reload() {
+    void fetch("/api/partner/gate", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { partners?: GateRow[] } | null) => {
+        if (Array.isArray(data?.partners)) setRows(data.partners);
+      })
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    reload();
+  }, []);
+
+  async function send(partnerId: string, resend = false) {
+    setBusy(partnerId);
+    setNote("");
+    setLink("");
+    try {
+      const res = await fetch("/api/partner/gate", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ partnerId, resend }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) {
+        setNote(typeof data.message === "string" ? data.message : "Activatiemail lukte niet.");
+      } else if (data.alreadySent) {
+        setNote(typeof data.message === "string" ? data.message : "Er is al een activatielink.");
+      } else if (data.mailed) {
+        setNote("Activatiemail verstuurd. Het bedrijf wordt Actief pas na de link.");
+      } else {
+        setNote(typeof data.message === "string" ? data.message : "Link aangemaakt, mail niet verzonden.");
+        if (typeof data.activationUrl === "string") setLink(data.activationUrl);
+      }
+      reload();
+    } catch {
+      setNote("Activatiemail lukte niet door een verbindingsfout.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return {
+    rows,
+    note,
+    link,
+    busy,
+    send,
+    activated: (id) => Boolean(rows.find((row) => row.id === id)?.activatedAt),
+    sent: (id) => Boolean(rows.find((row) => row.id === id)?.sentAt) && !rows.find((row) => row.id === id)?.activatedAt,
+  };
+}
+
 export const Route = createFileRoute("/beheer")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     tab: TABS.includes(s.tab as Tab) ? (s.tab as Tab) : undefined,
@@ -90,6 +167,7 @@ function Beheer() {
   const navigate = useNavigate({ from: "/beheer" });
   const tab: Tab = tabQ ?? "overzicht";
   const data = useMatchdesk();
+  const gate = usePartnerGate();
   const openLeads = data.leads.filter((l) => l.status === "Nieuw").length;
   const pending = data.partners.filter((p) => !p.example && p.status === "Te beoordelen").length;
   const counts: Partial<Record<Tab, number>> = {
@@ -139,8 +217,8 @@ function Beheer() {
           ) : null}
           {tab === "overzicht" ? <Overzicht onOpen={open} /> : null}
           {tab === "aanvragen" ? <Aanvragen /> : null}
-          {tab === "installateurs" ? <Installateurs /> : null}
-          {tab === "keuring" ? <Keuring /> : null}
+          {tab === "installateurs" ? <Installateurs gate={gate} /> : null}
+          {tab === "keuring" ? <Keuring gate={gate} /> : null}
           {tab === "afspraken" ? <Afspraken /> : null}
           {tab === "nieuwsbrief" ? <Nieuwsbrief /> : null}
           {tab === "website" ? <Website /> : null}
@@ -289,6 +367,7 @@ function Aanvragen() {
                     Verwijder
                   </button>
                 </div>
+                {l.partnerId && p?.status === "Actief" ? <PartnerBericht leadId={l.id} partnerId={p.id} /> : null}
               </li>
             );
           })}
@@ -298,13 +377,74 @@ function Aanvragen() {
   );
 }
 
-function Keuring() {
+function PartnerBericht({ leadId, partnerId }: { leadId: string; partnerId: string }) {
+  const [text, setText] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <form
+      className="mt-3 flex flex-wrap items-center gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setBusy(true);
+        setNote("");
+        void fetch("/api/mail/bericht", {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ partnerId, leadId, preview: text }),
+        })
+          .then(async (res) => ({ res, data: await res.json().catch(() => ({})) }))
+          .then(({ res, data }) => {
+            if (!res.ok || data.ok === false) {
+              setNote(typeof data.message === "string" ? data.message : "Berichtmail niet verzonden.");
+              return;
+            }
+            setNote(typeof data.message === "string" ? data.message : "Berichtmail verstuurd.");
+            if (data.mailed) setText("");
+          })
+          .catch(() => setNote("Berichtmail niet verzonden."))
+          .finally(() => setBusy(false));
+      }}
+    >
+      <input
+        className="field-input min-w-0 flex-1 py-1 text-xs"
+        value={text}
+        placeholder="Bericht voor de installateur"
+        onChange={(e) => setText(e.target.value)}
+      />
+      <Button size="sm" variant="onDark" type="submit" disabled={busy}>
+        {busy ? "Bezig…" : "Bericht klaar"}
+      </Button>
+      {note ? <span className="text-xs text-mint/70">{note}</span> : null}
+    </form>
+  );
+}
+
+function GateNote({ gate }: { gate: GateApi }) {
+  if (!gate.note && !gate.link) return null;
+  return (
+    <div className="mt-4 rounded-md border border-white/10 bg-night px-4 py-3 text-sm">
+      {gate.note ? <p>{gate.note}</p> : null}
+      {gate.link ? (
+        <p className="mt-2 break-all text-xs text-mint">
+          Activatielink (mail niet verzonden): {gate.link}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Keuring({ gate }: { gate: GateApi }) {
   const { partners, setPartnerStatus, setPartnerExclusive } = useMatchdesk();
   const queue = partners.filter((p) => !p.example && (p.status === "Te beoordelen" || p.exclusivePaid));
   return (
     <section>
       <h2 className="font-display text-2xl">Keuring</h2>
-      <p className="mt-1 text-sm text-mint/70">Betalen plaatst niemand live. Jij zet op Actief. Badge alleen bij Actief + keuring betaald.</p>
+      <p className="mt-1 text-sm text-mint/70">
+        KvK en werkgebied akkoord? Stuur de activatiemail. Het bedrijf wordt Actief pas als zij de link bevestigen. Daarna gaat de bevestigingsmail eruit. Badge alleen bij Actief + keuring betaald.
+      </p>
+      <GateNote gate={gate} />
       {queue.length === 0 ? (
         <p className="mt-4 text-sm text-mint/70">Geen open keuringen.</p>
       ) : (
@@ -319,9 +459,21 @@ function Keuring() {
                 {p.status} · keuring {p.exclusivePaid ? "betaald" : "niet betaald"}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button size="sm" variant="mint" onClick={() => setPartnerStatus(p.id, "Actief")}>
-                  Toelaten (live)
-                </Button>
+                {p.status !== "Actief" && !gate.activated(p.id) ? (
+                  <Button
+                    size="sm"
+                    variant="mint"
+                    disabled={gate.busy === p.id}
+                    onClick={() => void gate.send(p.id, gate.sent(p.id))}
+                  >
+                    {gate.sent(p.id) ? "Activatiemail opnieuw" : "KvK + werkgebied akkoord"}
+                  </Button>
+                ) : null}
+                {p.status !== "Actief" && gate.activated(p.id) ? (
+                  <Button size="sm" variant="mint" onClick={() => setPartnerStatus(p.id, "Actief")}>
+                    Weer live
+                  </Button>
+                ) : null}
                 <Button size="sm" variant="onDark" onClick={() => setPartnerStatus(p.id, "Gepauzeerd")}>
                   Pauzeren
                 </Button>
@@ -337,7 +489,7 @@ function Keuring() {
   );
 }
 
-function Installateurs() {
+function Installateurs({ gate }: { gate: GateApi }) {
   const { partners, setPartnerStatus, deletePartner, submitPartner, setPartnerExclusive } = useMatchdesk();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -350,12 +502,13 @@ function Installateurs() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="font-display text-2xl">Bedrijven</h2>
-          <p className="text-sm text-mint/70">Toelaten, pauzeren, archiveren of verwijderen.</p>
+          <p className="text-sm text-mint/70">Activatiemail na KvK en werkgebied. Pauzeren, archiveren of verwijderen blijft hier.</p>
         </div>
         <Button size="sm" variant="mint" onClick={() => setOpen((v) => !v)}>
           {open ? "Sluit" : "Toevoegen"}
         </Button>
       </div>
+      <GateNote gate={gate} />
       {open ? (
         <form
           className="mt-4 grid gap-3 rounded-lg border border-white/10 bg-deep p-4 md:grid-cols-2"
@@ -400,10 +553,14 @@ function Installateurs() {
               {p.email} · KvK {p.kvk} · {p.prefixes.map((x) => `${x}xx`).join(", ")}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {p.status !== "Actief" ? (
-                <Button size="sm" variant="mint" onClick={() => setPartnerStatus(p.id, "Actief")}>Toelaten</Button>
-              ) : (
+              {p.status === "Actief" ? (
                 <Button size="sm" variant="onDark" onClick={() => setPartnerStatus(p.id, "Gepauzeerd")}>Pauzeren</Button>
+              ) : gate.activated(p.id) ? (
+                <Button size="sm" variant="mint" onClick={() => setPartnerStatus(p.id, "Actief")}>Weer live</Button>
+              ) : (
+                <Button size="sm" variant="mint" disabled={gate.busy === p.id} onClick={() => void gate.send(p.id, gate.sent(p.id))}>
+                  {gate.sent(p.id) ? "Activatiemail opnieuw" : "Stuur activatielink"}
+                </Button>
               )}
               <Button size="sm" variant="onDark" onClick={() => setPartnerStatus(p.id, "Gearchiveerd")}>Archiveren</Button>
               <button type="button" className="text-xs text-red-300" onClick={() => deletePartner(p.id)}>Verwijder</button>

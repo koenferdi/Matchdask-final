@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@/lib/auth/server";
 import { isOwnerEmail } from "@/lib/owner";
+import { guardPartnerStatus } from "@/lib/mail/core.mjs";
+import { activatedAtById, notifyNewJobs } from "@/lib/mail/server";
 import {
+  asSignupPartner,
   publicPartners,
   readWorkspaceFile,
   realPartners,
@@ -24,13 +27,15 @@ function appendOnly(current: WorkspaceFile, incoming: Partial<WorkspaceFile>): W
   const kvks = new Set(current.partners.map((p) => p.kvk));
   const subs = new Set(current.subscribers.map((s) => s.email.toLowerCase()));
   const extraLeads = (incoming.leads ?? []).filter((l) => l?.id && !leadIds.has(l.id));
-  const extraPartners = realPartners(incoming.partners ?? []).filter(
-    (p) =>
-      p?.id &&
-      !partnerIds.has(p.id) &&
-      !kvks.has(p.kvk) &&
-      p.status === "Te beoordelen",
-  );
+  const extraPartners = realPartners(incoming.partners ?? [])
+    .filter(
+      (p) =>
+        p?.id &&
+        !partnerIds.has(p.id) &&
+        !kvks.has(p.kvk) &&
+        p.status === "Te beoordelen",
+    )
+    .map((p) => asSignupPartner(p));
   const extraSubs = (incoming.subscribers ?? []).filter(
     (s) => s?.email && !subs.has(s.email.toLowerCase()),
   );
@@ -73,9 +78,14 @@ export const Route = createFileRoute("/api/workspace")({
         }
         const current = readWorkspaceFile();
         if (owner) {
-          writeWorkspaceFile({
+          const partners = guardPartnerStatus(
+            current.partners,
+            realPartners(Array.isArray(incoming.partners) ? incoming.partners : current.partners),
+            activatedAtById(),
+          );
+          const next: WorkspaceFile = {
             leads: Array.isArray(incoming.leads) ? incoming.leads : current.leads,
-            partners: realPartners(Array.isArray(incoming.partners) ? incoming.partners : current.partners),
+            partners,
             subscribers: Array.isArray(incoming.subscribers) ? incoming.subscribers : current.subscribers,
             notes: Array.isArray(incoming.notes) ? incoming.notes : current.notes,
             activeLeadId: incoming.activeLeadId,
@@ -83,7 +93,13 @@ export const Route = createFileRoute("/api/workspace")({
             exclusivePaid: incoming.exclusivePaid,
             siteNotice: incoming.siteNotice ?? current.siteNotice ?? "",
             matchingPaused: Boolean(incoming.matchingPaused),
-          });
+          };
+          writeWorkspaceFile(next);
+          try {
+            await notifyNewJobs(current.leads, next.leads, next.partners);
+          } catch (err) {
+            console.error("[matchdesk-mail] klus", err);
+          }
           return Response.json({ ok: true, full: true });
         }
         writeWorkspaceFile(appendOnly(current, incoming));
