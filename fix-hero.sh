@@ -69,7 +69,10 @@ NODE_OPTIONS=--max-old-space-size=1536 npm run build
 mkdir -p .output/public/higgsfield
 cp -f public/higgsfield/* .output/public/higgsfield/ 2>/dev/null || true
 cp -f public/home.webp .output/public/home.webp 2>/dev/null || true
-systemctl restart matchdesk
+# De dienst draait uit een momentopname (release.conf), niet uit $APP.
+# Alleen herstarten zou de oude versie opnieuw starten; release.sh zet de nieuwe build live.
+curl -fsSL "$BASE/deploy/release.sh" -o /tmp/matchdesk-release.sh
+bash /tmp/matchdesk-release.sh
 echo HERO_DONE
 echo GATE_PHOTO
 
