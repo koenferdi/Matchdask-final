@@ -96,6 +96,8 @@ export type Partner = {
   id: string;
   name: string;
   email: string;
+  /** Voornaam of contactpersoon, gebruikt in de activatiemail. */
+  contactName?: string;
   kvk: string;
   products: Product[];
   prefixes: string[];
@@ -104,6 +106,8 @@ export type Partner = {
   quality: number;
   example?: boolean;
   exclusivePaid?: boolean;
+  /** Gezet door de activatiepagina, niet door het aanmeldformulier. */
+  activatedAt?: string;
 };
 
 export type Subscriber = {

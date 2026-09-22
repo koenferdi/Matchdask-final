@@ -58,11 +58,17 @@ PORT=${PORT}
 HOST=127.0.0.1
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+FROM_EMAIL=info@getmatchdesk.nl
+RESEND_API_KEY=
+MATCHDESK_PUBLIC_URL=https://${DOMAIN_WWW}
 EOF
   chmod 600 /etc/matchdesk.env
 else
   grep -q MATCHDESK_VPS /etc/matchdesk.env || echo "MATCHDESK_VPS=1" >> /etc/matchdesk.env
   grep -q VITE_NATIVE_GOOGLE /etc/matchdesk.env || echo "VITE_NATIVE_GOOGLE=true" >> /etc/matchdesk.env
+  grep -q '^FROM_EMAIL=' /etc/matchdesk.env || echo 'FROM_EMAIL=info@getmatchdesk.nl' >> /etc/matchdesk.env
+  grep -q '^RESEND_API_KEY=' /etc/matchdesk.env || echo 'RESEND_API_KEY=' >> /etc/matchdesk.env
+  grep -q '^MATCHDESK_PUBLIC_URL=' /etc/matchdesk.env || echo "MATCHDESK_PUBLIC_URL=https://${DOMAIN_WWW}" >> /etc/matchdesk.env
 fi
 
 echo "==> Bouwen"

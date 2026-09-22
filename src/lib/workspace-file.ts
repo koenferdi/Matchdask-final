@@ -61,12 +61,33 @@ export function writeWorkspaceFile(ws: WorkspaceFile) {
   writeFileSync(FILE, JSON.stringify(clean(ws), null, 2));
 }
 
+/** Public signup may only create a review row. Status and activation are server-owned. */
+export function asSignupPartner(partner: Partner): Partner {
+  return {
+    id: String(partner.id || "").slice(0, 80),
+    name: String(partner.name || "").slice(0, 160),
+    email: String(partner.email || "").trim().toLowerCase().slice(0, 160),
+    contactName: partner.contactName ? String(partner.contactName).trim().slice(0, 120) : undefined,
+    kvk: String(partner.kvk || "").replace(/\D/g, "").slice(0, 8),
+    products: Array.isArray(partner.products) ? partner.products : [],
+    prefixes: Array.isArray(partner.prefixes) ? partner.prefixes.map((item) => String(item).slice(0, 4)) : [],
+    capacity: Number(partner.capacity) || 0,
+    status: "Te beoordelen",
+    quality: 0,
+  };
+}
+
 export function publicPartners(partners: Partner[]): Partner[] {
   return realPartners(partners)
     .filter((p) => p.status === "Actief")
-    .map((p) => ({
-      ...p,
-      email: "",
-      kvk: p.kvk ? `${p.kvk.slice(0, 4)}****` : "",
-    }));
+    .map((p) => {
+      const copy: Partner = {
+        ...p,
+        email: "",
+        contactName: undefined,
+        kvk: p.kvk ? `${p.kvk.slice(0, 4)}****` : "",
+      };
+      delete copy.activatedAt;
+      return copy;
+    });
 }
