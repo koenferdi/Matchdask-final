@@ -4,7 +4,7 @@ set -euo pipefail
 APP=/opt/matchdesk
 BASE=https://raw.githubusercontent.com/koenferdi/Matchdask-final/main
 cd "$APP"
-mkdir -p src/routes/api/partner src/routes/api/mail src/lib/mail src/lib src/components /opt/matchdesk/data
+mkdir -p src/routes/api/partner src/routes/api/mail src/lib/mail src/lib src/components src/components/marketing /opt/matchdesk/data
 rm -f src/routes/rapport.voorbeeld.tsx src/routes/exclusief.voorbeeld.tsx
 files=(
   src/components/cinema-hero.tsx
@@ -15,8 +15,10 @@ files=(
   src/components/proof-badge.tsx
   src/components/fit-document.tsx
   src/components/ui/button.tsx
+  src/components/marketing/soft-launch-keyframes.css
   src/styles.css
   src/lib/matchdesk.ts
+  src/lib/finance.ts
   src/lib/store.ts
   src/lib/blog.ts
   src/lib/workspace-file.ts
@@ -44,6 +46,7 @@ files=(
   src/routes/api/partner/gate.ts
   src/routes/api/partner/activeren.ts
   src/routes/api/mail/bericht.ts
+  src/routes/api/mail/log.ts
 )
 for f in "${files[@]}"; do
   echo "sync $f"
