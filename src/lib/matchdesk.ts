@@ -46,6 +46,23 @@ export const ROOF_DIRS: RoofDir[] = ["Zuid", "Zuidwest", "Zuidoost", "Oost", "We
 export const SHADES: Shade[] = ["Weinig", "Deels (dakkapel, schoorsteen, boom)", "Veel", "Weet ik niet"];
 export const METERS: Meter[] = ["1-fase", "3-fase", "Weet ik niet"];
 
+/** Opdracht & commissie (deal-workflow op productie / toekomstige cockpit). */
+export type LeadDeal = {
+  contactedAt?: string;
+  quote?: { reference: string; amountCents: number; basis: string };
+  outcome?: "Gewonnen" | "Verloren";
+  reason?: string;
+  commission?: { amountCents: number; firstWin?: boolean; capCents?: number };
+  invoice?: {
+    reference: string;
+    issuedOn: string;
+    dueOn: string;
+    totalCents: number;
+    taxNote: string;
+  };
+  receipts?: Array<{ reference: string; receivedOn: string; amountCents: number }>;
+};
+
 export type Lead = {
   id: string;
   product: Product;
@@ -68,6 +85,10 @@ export type Lead = {
   meter?: Meter;
   hasSolar?: boolean;
   note?: string;
+  /** Opdracht & commissie (vastgelegd in de deal-workflow). */
+  deal?: LeadDeal;
+  /** Soft-delete door admin force-verwijderen van een financieel dossier. */
+  deletedAt?: string;
 };
 
 export const SAMPLE_LEAD: Lead = {

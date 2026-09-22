@@ -15,6 +15,7 @@ import {
   type Shade,
   type Meter,
 } from "./matchdesk";
+import { FINANCIAL_DELETE_BLOCKED, hasFinancialRegistration } from "./finance";
 
 export type Draft = {
   product: Product;
@@ -80,7 +81,7 @@ type Store = {
   submitPartner: (partner: Omit<Partner, "id" | "status" | "quality">) => Partner;
   setPartnerStatus: (id: string, status: Partner["status"]) => void;
   setLeadStatus: (id: string, status: Lead["status"]) => void;
-  deleteLead: (id: string) => void;
+  deleteLead: (id: string, opts?: { force?: boolean }) => { ok: boolean; blocked?: boolean; message?: string };
   deletePartner: (id: string) => void;
   deleteSubscriber: (email: string) => void;
   addNote: (text: string) => void;
@@ -298,9 +299,24 @@ export const useMatchdesk = create<Store>((set, get) => ({
     }));
     persistNow(get, set);
   },
-  deleteLead: (id) => {
-    set((s) => ({ leads: s.leads.filter((l) => l.id !== id) }));
+  deleteLead: (id, opts) => {
+    const lead = get().leads.find((l) => l.id === id);
+    if (!lead) return { ok: false, message: "Dossier niet gevonden." };
+    if (hasFinancialRegistration(lead) && !opts?.force) {
+      return { ok: false, blocked: true, message: FINANCIAL_DELETE_BLOCKED };
+    }
+    if (hasFinancialRegistration(lead) && opts?.force) {
+      // Soft-delete: keep deal data on disk, hide from cockpit.
+      set((s) => ({
+        leads: s.leads.map((l) =>
+          l.id === id ? { ...l, deletedAt: new Date().toISOString() } : l,
+        ),
+      }));
+    } else {
+      set((s) => ({ leads: s.leads.filter((l) => l.id !== id) }));
+    }
     persistNow(get, set);
+    return { ok: true };
   },
   deletePartner: (id) => {
     set((s) => ({ partners: s.partners.filter((p) => p.id !== id) }));
