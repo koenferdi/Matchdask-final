@@ -17,6 +17,8 @@ import {
   renderConfirmationEmail,
   renderJobEmail,
   renderMessageEmail,
+  listMailActivity,
+  appendOutbox,
 } from "./core.mjs";
 
 const ORIGIN = "https://www.getmatchdesk.nl";
@@ -283,4 +285,30 @@ test("berichtmail bestaat en gaat niet naar een bedrijf in beoordeling", () => {
   assert.equal(ready.email.subject, "Nieuw bericht via Matchdesk");
   assert.match(ready.email.html, /Open het bericht/);
   assert.doesNotMatch(`${ready.email.html}${renderConfirmationEmail({ greeting: "Pieter", company: "RD Solar Group", portalUrl: `${ORIGIN}/bedrijf` }).html}${renderJobEmail({ greeting: "Pieter", company: "RD Solar Group", lead: lead(), portalUrl: `${ORIGIN}/bedrijf` }).html}`, /kennismaking/i);
+});
+
+test("listMailActivity toont outbox en ledger-sleutels", () => {
+  let ledger = emptyLedger();
+  ledger = appendOutbox(ledger, {
+    to: "info@rdsolargroup.nl",
+    subject: "Activeer je Matchdesk-account",
+    type: "activatie",
+    status: "sent",
+    partnerId: "P-RD",
+    at: "2026-09-22T08:00:00.000Z",
+  });
+  ledger = {
+    ...ledger,
+    sentKeys: { "klus:MD-1:P-RD": "2026-09-22T09:00:00.000Z" },
+    pendingJobs: [{ leadId: "MD-2", partnerId: "P-RD" }],
+  };
+  const listed = listMailActivity({
+    ledger,
+    partners: [partner({ status: "Actief" })],
+    leads: [lead({ id: "MD-1", partnerId: "P-RD" }), lead({ id: "MD-2", partnerId: "P-RD" })],
+  });
+  assert.ok(listed.rows.length >= 2);
+  assert.ok(listed.rows.some((row) => row.type === "activatie" && row.status === "sent"));
+  assert.ok(listed.rows.some((row) => row.type === "klus" && row.status === "queued"));
+  assert.ok(listed.gaps.length >= 1);
 });

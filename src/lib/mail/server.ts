@@ -9,6 +9,8 @@ import {
   decideGate,
   emptyLedger,
   listActivationStatus,
+  listMailActivity,
+  appendOutbox,
   markConfirmationSent,
   markJobsSent,
   markKeySent,
@@ -21,6 +23,12 @@ import {
 type MailResult = { ok: boolean; skipped?: boolean; reason?: string };
 
 type Outbound = { to: string; subject: string; html: string; text: string };
+
+type MailMeta = {
+  type?: "activatie" | "bevestiging" | "klus" | "bericht" | "overig";
+  partnerId?: string;
+  leadId?: string;
+};
 
 function dataDir() {
   return process.env.MATCHDESK_DATA?.trim() || "/opt/matchdesk/data";
@@ -65,38 +73,68 @@ export async function ownerFrom(request: Request) {
   }
 }
 
-export async function sendMail(message: Outbound): Promise<MailResult> {
+export async function sendMail(message: Outbound, meta: MailMeta = {}): Promise<MailResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = fromAddress();
+  let result: MailResult;
   if (!apiKey) {
     console.warn("[matchdesk-mail] RESEND_API_KEY ontbreekt; niet verzonden:", message.subject);
-    return { ok: false, skipped: true, reason: "RESEND_API_KEY ontbreekt" };
+    result = { ok: false, skipped: true, reason: "RESEND_API_KEY ontbreekt" };
+  } else {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: `Matchdesk <${from}>`,
+          to: [message.to],
+          subject: message.subject,
+          html: message.html,
+          text: message.text,
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.text();
+        console.error("[matchdesk-mail] resend", res.status, detail.slice(0, 400));
+        result = { ok: false, reason: `Resend ${res.status}` };
+      } else {
+        result = { ok: true };
+      }
+    } catch (err) {
+      console.error("[matchdesk-mail] verzenden mislukt", err);
+      result = { ok: false, reason: "verzenden mislukt" };
+    }
   }
   try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: `Matchdesk <${from}>`,
-        to: [message.to],
+    const status = result.ok ? "sent" : result.skipped ? "queued" : "failed";
+    saveLedger(
+      appendOutbox(loadLedger(), {
+        to: message.to,
         subject: message.subject,
-        html: message.html,
-        text: message.text,
+        type: meta.type || "overig",
+        status,
+        reason: result.reason || null,
+        partnerId: meta.partnerId,
+        leadId: meta.leadId,
       }),
-    });
-    if (!res.ok) {
-      const detail = await res.text();
-      console.error("[matchdesk-mail] resend", res.status, detail.slice(0, 400));
-      return { ok: false, reason: `Resend ${res.status}` };
-    }
-    return { ok: true };
+    );
   } catch (err) {
-    console.error("[matchdesk-mail] verzenden mislukt", err);
-    return { ok: false, reason: "verzenden mislukt" };
+    console.error("[matchdesk-mail] outbox log", err);
   }
+  return result;
+}
+
+export function mailActivity(limit = 100) {
+  const ws = readWorkspaceFile();
+  return listMailActivity({
+    ledger: loadLedger(),
+    partners: ws.partners,
+    leads: ws.leads,
+    limit,
+  });
 }
 
 export function activatedAtById() {
@@ -128,7 +166,7 @@ export async function sendActivationMail(partnerId: string, resend = false) {
   if (!decided.ok) return decided;
   if (decided.alreadySent) return decided;
   saveLedger(decided.ledger);
-  const mailed = await sendMail(decided.email);
+  const mailed = await sendMail(decided.email, { type: "activatie", partnerId });
   return {
     ok: true,
     mailed: mailed.ok,
@@ -179,7 +217,10 @@ export async function activateFromToken(token: string) {
   }
   let mailed = { ok: false, skipped: true, reason: "geen bevestigingsmail" } as MailResult;
   if (decided.email) {
-    mailed = await sendMail(decided.email);
+    mailed = await sendMail(decided.email, {
+      type: "bevestiging",
+      partnerId: decided.partnerId,
+    });
     if (mailed.ok && decided.partnerId) {
       saveLedger(markConfirmationSent(loadLedger(), decided.partnerId, Date.now()));
     }
@@ -215,7 +256,11 @@ export async function notifyNewJobs(before: Lead[], after: Lead[], partners: Par
   if (beforePending !== afterPending) saveLedger(planned.ledger);
   const sent: string[] = [];
   for (const item of planned.emails) {
-    const result = await sendMail(item.mail);
+    const result = await sendMail(item.mail, {
+      type: "klus",
+      partnerId: item.job?.partnerId,
+      leadId: item.job?.leadId,
+    });
     if (result.ok) sent.push(item.key);
   }
   if (sent.length) saveLedger(markJobsSent(loadLedger(), sent, Date.now()));
@@ -233,7 +278,11 @@ export async function sendPartnerMessage(input: { partnerId: string; leadId?: st
     portalUrl: `${publicOrigin()}/bedrijf`,
   });
   if (!planned.ok || planned.alreadySent) return planned;
-  const mailed = await sendMail(planned.email);
+  const mailed = await sendMail(planned.email, {
+    type: "bericht",
+    partnerId: input.partnerId,
+    leadId: input.leadId,
+  });
   if (mailed.ok) saveLedger(markKeySent(loadLedger(), planned.key, Date.now()));
   return {
     ok: mailed.ok,

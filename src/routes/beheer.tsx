@@ -8,12 +8,18 @@ import { CONTACT, PRODUCTS, STAGES, STRIPE, findPartnerFor, type Lead, type Prod
 import { useMatchdesk } from "@/lib/store";
 import { isOwner } from "@/lib/owner";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import {
+  FINANCIAL_DELETE_BLOCKED,
+  hasFinancialRegistration,
+  visibleLeads,
+} from "@/lib/finance";
 
 const TABS = [
   "overzicht",
   "aanvragen",
   "keuring",
   "installateurs",
+  "mail",
   "afspraken",
   "nieuwsbrief",
   "website",
@@ -27,6 +33,7 @@ const LABELS: Record<Tab, string> = {
   aanvragen: "Aanvragen",
   keuring: "Keuring",
   installateurs: "Bedrijven",
+  mail: "Mail",
   afspraken: "Afspraken",
   nieuwsbrief: "Nieuwsbrief",
   website: "Website",
@@ -168,12 +175,13 @@ function Beheer() {
   const tab: Tab = tabQ ?? "overzicht";
   const data = useMatchdesk();
   const gate = usePartnerGate();
-  const openLeads = data.leads.filter((l) => l.status === "Nieuw").length;
+  const openLeads = visibleLeads(data.leads).filter((l) => l.status === "Nieuw").length;
   const pending = data.partners.filter((p) => !p.example && p.status === "Te beoordelen").length;
   const counts: Partial<Record<Tab, number>> = {
     aanvragen: openLeads,
     keuring: pending,
-    afspraken: data.leads.filter((l) => l.appointment && l.appointment.status === "Aangevraagd").length,
+    afspraken: visibleLeads(data.leads).filter((l) => l.appointment && l.appointment.status === "Aangevraagd")
+      .length,
     nieuwsbrief: data.subscribers.length,
   };
 
@@ -219,6 +227,7 @@ function Beheer() {
           {tab === "aanvragen" ? <Aanvragen /> : null}
           {tab === "installateurs" ? <Installateurs gate={gate} /> : null}
           {tab === "keuring" ? <Keuring gate={gate} /> : null}
+          {tab === "mail" ? <MailLog /> : null}
           {tab === "afspraken" ? <Afspraken /> : null}
           {tab === "nieuwsbrief" ? <Nieuwsbrief /> : null}
           {tab === "website" ? <Website /> : null}
@@ -230,7 +239,8 @@ function Beheer() {
 }
 
 function Overzicht({ onOpen }: { onOpen: (tab: Tab) => void }) {
-  const { leads, partners, subscribers, matchingPaused, setMatchingPaused, siteNotice } = useMatchdesk();
+  const { leads: rawLeads, partners, subscribers, matchingPaused, setMatchingPaused, siteNotice } = useMatchdesk();
+  const leads = visibleLeads(rawLeads);
   const [health, setHealth] = useState<"laden" | "online" | "offline">("laden");
   useEffect(() => {
     fetch("/api/auth/ok", { credentials: "include" })
@@ -315,17 +325,56 @@ function Overzicht({ onOpen }: { onOpen: (tab: Tab) => void }) {
 }
 
 function Aanvragen() {
-  const { leads, partners, requestMatch, setLeadStatus, deleteLead } = useMatchdesk();
+  const { leads: rawLeads, partners, requestMatch, setLeadStatus, deleteLead, hydrate } = useMatchdesk();
+  const leads = visibleLeads(rawLeads);
+  const [blockNote, setBlockNote] = useState("");
+  const [forceId, setForceId] = useState<string | null>(null);
+
+  function onDelete(lead: Lead) {
+    setBlockNote("");
+    const result = deleteLead(lead.id);
+    if (result.blocked) {
+      setBlockNote(result.message || FINANCIAL_DELETE_BLOCKED);
+      setForceId(lead.id);
+      return;
+    }
+    if (!result.ok) setBlockNote(result.message || "Verwijderen lukte niet.");
+    setForceId(null);
+  }
+
+  function onForceDelete(lead: Lead) {
+    const ok = window.confirm(
+      `Force-verwijderen van “${lead.name}”? Dit dossier heeft een financiële registratie. Soft-delete: het verdwijnt uit de cockpit, de registratie blijft in de data bewaard.`,
+    );
+    if (!ok) return;
+    const result = deleteLead(lead.id, { force: true });
+    if (!result.ok) {
+      setBlockNote(result.message || FINANCIAL_DELETE_BLOCKED);
+      return;
+    }
+    setBlockNote("");
+    setForceId(null);
+  }
+
   return (
     <section>
       <h2 className="font-display text-2xl">{leads.length} aanvragen</h2>
       <p className="text-sm text-mint/70">Status, match of verwijderen. Eén bedrijf per aanvraag.</p>
+      {blockNote ? (
+        <p role="alert" className="mt-3 text-sm text-red-200">
+          {blockNote}{" "}
+          <button type="button" className="underline" onClick={() => void hydrate()}>
+            Gegevens vernieuwen
+          </button>
+        </p>
+      ) : null}
       {leads.length === 0 ? (
         <p className="mt-4 text-sm text-mint/70">Nog geen aanvragen.</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {leads.map((l) => {
             const p = l.partnerId ? partners.find((x) => x.id === l.partnerId) : findPartnerFor(l, partners);
+            const financial = hasFinancialRegistration(l);
             return (
               <li key={l.id} className="rounded-lg border border-white/10 bg-deep p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -344,6 +393,11 @@ function Aanvragen() {
                       ) : null}
                     </p>
                     {l.address ? <p className="text-xs text-mint/60">{l.address}</p> : null}
+                    {financial ? (
+                      <p className="mt-1 text-xs text-amber">
+                        Financiële registratie · {l.deal?.outcome ?? "offerte/commissie"}
+                      </p>
+                    ) : null}
                   </div>
                   <select
                     className="field-input max-w-[11rem] py-1 text-xs"
@@ -363,9 +417,22 @@ function Aanvragen() {
                   ) : (
                     <span className="text-xs text-mint/70">{p?.name ?? "geen partner"}</span>
                   )}
-                  <button type="button" className="ml-auto text-xs text-red-300" onClick={() => deleteLead(l.id)}>
+                  <button
+                    type="button"
+                    className="ml-auto text-xs text-red-300"
+                    onClick={() => onDelete(l)}
+                  >
                     Verwijder
                   </button>
+                  {financial && forceId === l.id ? (
+                    <button
+                      type="button"
+                      className="text-xs font-semibold text-amber"
+                      onClick={() => onForceDelete(l)}
+                    >
+                      Forceer (admin)
+                    </button>
+                  ) : null}
                 </div>
                 {l.partnerId && p?.status === "Actief" ? <PartnerBericht leadId={l.id} partnerId={p.id} /> : null}
               </li>
@@ -578,8 +645,8 @@ function Installateurs({ gate }: { gate: GateApi }) {
 }
 
 function Afspraken() {
-  const { leads, partners, confirmAppointment, cancelAppointment } = useMatchdesk();
-  const rows = leads.filter((l) => l.appointment);
+  const { leads: rawLeads, partners, confirmAppointment, cancelAppointment } = useMatchdesk();
+  const rows = visibleLeads(rawLeads).filter((l) => l.appointment);
   return (
     <section>
       <h2 className="font-display text-2xl">Afspraken</h2>
@@ -607,6 +674,117 @@ function Afspraken() {
           })}
         </ul>
       )}
+    </section>
+  );
+}
+
+type MailRow = {
+  id: string;
+  at: string | null;
+  to: string;
+  subject: string;
+  type: string;
+  status: string;
+  reason?: string | null;
+  company?: string | null;
+  leadName?: string | null;
+};
+
+function MailLog() {
+  const [rows, setRows] = useState<MailRow[]>([]);
+  const [gaps, setGaps] = useState<string[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  function reload() {
+    setLoading(true);
+    setError("");
+    void fetch("/api/mail/log?limit=100", { credentials: "include" })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Mail-log niet beschikbaar.");
+        setRows(Array.isArray(data.rows) ? data.rows : []);
+        setGaps(Array.isArray(data.gaps) ? data.gaps : []);
+      })
+      .catch((err: Error) => setError(err.message || "Mail-log niet beschikbaar."))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    reload();
+  }, []);
+
+  const statusLabel: Record<string, string> = {
+    sent: "Verzonden",
+    failed: "Mislukt",
+    queued: "In wachtrij",
+    unknown: "Onbekend",
+  };
+
+  return (
+    <section>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-2xl">Mail</h2>
+          <p className="text-sm text-mint/70">
+            Recent outbound verkeer: activatie, bevestiging, klus en bericht. Bron: mail-ledger + outbox.
+          </p>
+        </div>
+        <Button size="sm" variant="onDark" onClick={() => reload()} disabled={loading}>
+          {loading ? "Laden…" : "Vernieuwen"}
+        </Button>
+      </div>
+      {error ? (
+        <p role="alert" className="mt-3 text-sm text-red-200">
+          {error}
+        </p>
+      ) : null}
+      {gaps.length ? (
+        <ul className="mt-3 space-y-1 text-xs text-mint/55">
+          {gaps.map((gap) => (
+            <li key={gap}>· {gap}</li>
+          ))}
+        </ul>
+      ) : null}
+      {!loading && rows.length === 0 && !error ? (
+        <p className="mt-4 text-sm text-mint/70">Nog geen mailactiviteit in de ledger.</p>
+      ) : null}
+      {rows.length ? (
+        <ul className="mt-4 space-y-3">
+          {rows.map((row) => (
+            <li key={row.id} className="rounded-lg border border-white/10 bg-deep p-4 text-sm">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <strong className="font-display text-base">{row.subject || row.type}</strong>
+                  <p className="mt-1 text-xs text-mint/60">
+                    {row.at ? new Date(row.at).toLocaleString("nl-NL") : "Nog geen tijdstip"} · {row.type}
+                  </p>
+                  <p className="mt-1 text-xs">
+                    Naar <a className="underline" href={`mailto:${row.to}`}>{row.to || "—"}</a>
+                  </p>
+                  {row.company || row.leadName ? (
+                    <p className="mt-1 text-xs text-mint/60">
+                      {[row.company, row.leadName].filter(Boolean).join(" · ")}
+                    </p>
+                  ) : null}
+                  {row.reason ? <p className="mt-1 text-xs text-amber">{row.reason}</p> : null}
+                </div>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    row.status === "sent"
+                      ? "bg-mint/20 text-mint"
+                      : row.status === "failed"
+                        ? "bg-red-400/20 text-red-200"
+                        : "bg-white/10 text-mint/80"
+                  }`}
+                >
+                  {statusLabel[row.status] || row.status}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }

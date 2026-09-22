@@ -45,6 +45,21 @@ Unit tests, zonder netwerk:
 node --test src/lib/mail/core.test.mjs
 ```
 
+## Cockpit — tab Mail
+
+Alleen eigenaar (`isOwnerEmail`). Tab **Mail** in `/beheer` haalt `GET /api/mail/log` op.
+
+Bronnen in `mail-ledger.json`:
+
+| Bron | Inhoud |
+|---|---|
+| `outbox[]` | Elke `sendMail`-poging (to, subject, type, status sent/failed/queued) |
+| `byPartner` | Activatielink + bevestigingsmail-tijdstempels |
+| `sentKeys` | Verzonden klus-/berichtmails |
+| `pendingJobs` | Klusmails in wachtrij |
+
+Bekende gaten: geen Resend delivery/open/bounce; activatieregel in de ledger betekent “link aangemaakt”, niet per se “Resend OK”. Nieuwe pogingen vullen `outbox` wel.
+
 Voorbeeld van de registratie/activatie-mail (Pieter, RD Solar Group, demotoken):
 
 - `ops/mail/activatie-registratie.html`

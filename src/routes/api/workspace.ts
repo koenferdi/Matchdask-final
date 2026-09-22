@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@/lib/auth/server";
 import { isOwnerEmail } from "@/lib/owner";
+import { mergeProtectedLeads } from "@/lib/finance";
 import { guardPartnerStatus } from "@/lib/mail/core.mjs";
 import { activatedAtById, notifyNewJobs } from "@/lib/mail/server";
 import {
@@ -83,8 +84,11 @@ export const Route = createFileRoute("/api/workspace")({
             realPartners(Array.isArray(incoming.partners) ? incoming.partners : current.partners),
             activatedAtById(),
           );
+          const leads = Array.isArray(incoming.leads)
+            ? mergeProtectedLeads(current.leads, incoming.leads)
+            : current.leads;
           const next: WorkspaceFile = {
-            leads: Array.isArray(incoming.leads) ? incoming.leads : current.leads,
+            leads,
             partners,
             subscribers: Array.isArray(incoming.subscribers) ? incoming.subscribers : current.subscribers,
             notes: Array.isArray(incoming.notes) ? incoming.notes : current.notes,

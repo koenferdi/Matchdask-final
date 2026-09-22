@@ -12,7 +12,7 @@ export const COMMISSION_HTML =
   "Eerste gewonnen klus <strong>€0</strong> commissie, daarna <strong>10%</strong> (max €400 panelen / €600 batterij).";
 
 export function emptyLedger() {
-  return { byPartner: {}, sentKeys: {}, pendingJobs: [] };
+  return { byPartner: {}, sentKeys: {}, pendingJobs: [], outbox: [] };
 }
 
 export function newToken() {
@@ -248,6 +248,7 @@ function normalizeLedger(ledger) {
     byPartner: base.byPartner && typeof base.byPartner === "object" ? base.byPartner : {},
     sentKeys: base.sentKeys && typeof base.sentKeys === "object" ? base.sentKeys : {},
     pendingJobs: Array.isArray(base.pendingJobs) ? base.pendingJobs : [],
+    outbox: Array.isArray(base.outbox) ? base.outbox : [],
   };
 }
 
@@ -615,5 +616,198 @@ export function markKeySent(ledger, key, now) {
   return {
     ...book,
     sentKeys: { ...book.sentKeys, [key]: new Date(now).toISOString() },
+  };
+}
+
+/**
+ * Build a cockpit mail list from the ledger + optional outbox rows.
+ * Gaps: older Resend attempts without outbox entries only show keys/timestamps;
+ * subject/to may be reconstructed from partners/leads when linked.
+ */
+export function listMailActivity({ ledger, partners, leads, limit = 100 } = {}) {
+  const book = normalizeLedger(ledger);
+  const partnerById = new Map((partners || []).map((p) => [p.id, p]));
+  const leadById = new Map((leads || []).map((l) => [l.id, l]));
+  const rows = [];
+
+  for (const entry of book.outbox) {
+    if (!entry || typeof entry !== "object") continue;
+    rows.push({
+      id: entry.id || `outbox:${entry.at}:${entry.to}:${entry.subject}`,
+      at: entry.at || null,
+      to: entry.to || "",
+      subject: entry.subject || "",
+      type: entry.type || "overig",
+      status: entry.status || "unknown",
+      reason: entry.reason || null,
+      partnerId: entry.partnerId || null,
+      leadId: entry.leadId || null,
+      company: entry.partnerId ? partnerById.get(entry.partnerId)?.name || null : null,
+      leadName: entry.leadId ? leadById.get(entry.leadId)?.name || null : null,
+      source: "outbox",
+    });
+  }
+
+  for (const row of Object.values(book.byPartner)) {
+    if (!row?.partnerId) continue;
+    const partner = partnerById.get(row.partnerId);
+    if (row.sentAt) {
+      rows.push({
+        id: `activatie:${row.partnerId}:${row.sentAt}`,
+        at: row.sentAt,
+        to: partner?.email || "",
+        subject: "Activeer je Matchdesk-account",
+        type: "activatie",
+        status: "queued",
+        reason: "Link aangemaakt in ledger (verzending niet altijd bevestigd).",
+        partnerId: row.partnerId,
+        leadId: null,
+        company: partner?.name || null,
+        leadName: null,
+        source: "ledger",
+      });
+    }
+    if (row.confirmationSentAt) {
+      rows.push({
+        id: `bevestiging:${row.partnerId}:${row.confirmationSentAt}`,
+        at: row.confirmationSentAt,
+        to: partner?.email || "",
+        subject: "Je Matchdesk-account is actief",
+        type: "bevestiging",
+        status: "sent",
+        reason: null,
+        partnerId: row.partnerId,
+        leadId: null,
+        company: partner?.name || null,
+        leadName: null,
+        source: "ledger",
+      });
+    }
+  }
+
+  for (const [key, at] of Object.entries(book.sentKeys)) {
+    if (key.startsWith("klus:")) {
+      const [, leadId, partnerId] = key.split(":");
+      const partner = partnerById.get(partnerId);
+      const lead = leadById.get(leadId);
+      rows.push({
+        id: `sent:${key}`,
+        at: typeof at === "string" ? at : null,
+        to: partner?.email || "",
+        subject: lead?.product ? `Nieuwe klus — ${lead.product}` : "Nieuwe klus",
+        type: "klus",
+        status: "sent",
+        reason: null,
+        partnerId: partnerId || null,
+        leadId: leadId || null,
+        company: partner?.name || null,
+        leadName: lead?.name || null,
+        source: "ledger",
+      });
+      continue;
+    }
+    if (key.startsWith("bericht:")) {
+      const parts = key.split(":");
+      const partnerId = parts[1];
+      const partner = partnerById.get(partnerId);
+      const leadId = parts[2] && parts[2] !== "algemeen" ? parts[2] : null;
+      const lead = leadId ? leadById.get(leadId) : null;
+      rows.push({
+        id: `sent:${key}`,
+        at: typeof at === "string" ? at : null,
+        to: partner?.email || "",
+        subject: "Nieuw bericht via Matchdesk",
+        type: "bericht",
+        status: "sent",
+        reason: null,
+        partnerId: partnerId || null,
+        leadId,
+        company: partner?.name || null,
+        leadName: lead?.name || null,
+        source: "ledger",
+      });
+    }
+  }
+
+  for (const job of book.pendingJobs) {
+    if (!job?.leadId || !job?.partnerId) continue;
+    const partner = partnerById.get(job.partnerId);
+    const lead = leadById.get(job.leadId);
+    rows.push({
+      id: `pending:${job.leadId}:${job.partnerId}`,
+      at: null,
+      to: partner?.email || "",
+      subject: lead?.product ? `Nieuwe klus — ${lead.product}` : "Nieuwe klus",
+      type: "klus",
+      status: "queued",
+      reason: "Wacht op Actief bedrijf of geldig e-mailadres.",
+      partnerId: job.partnerId,
+      leadId: job.leadId,
+      company: partner?.name || null,
+      leadName: lead?.name || null,
+      source: "ledger",
+    });
+  }
+
+  // Prefer outbox rows over reconstructed ledger duplicates (same type+partner+time window).
+  const seen = new Set();
+  const deduped = [];
+  for (const row of rows) {
+    const stamp = row.at || "pending";
+    const fingerprint =
+      row.source === "outbox"
+        ? row.id
+        : `${row.type}|${row.partnerId || ""}|${row.leadId || ""}|${stamp}|${row.status}`;
+    if (seen.has(fingerprint)) continue;
+    // Skip ledger reconstructions when outbox already logged the same event roughly.
+    if (row.source === "ledger") {
+      const covered = deduped.some(
+        (other) =>
+          other.source === "outbox" &&
+          other.type === row.type &&
+          other.partnerId === row.partnerId &&
+          (other.leadId || null) === (row.leadId || null) &&
+          other.at &&
+          row.at &&
+          Math.abs(Date.parse(other.at) - Date.parse(row.at)) < 60_000,
+      );
+      if (covered) continue;
+    }
+    seen.add(fingerprint);
+    deduped.push(row);
+  }
+
+  deduped.sort((a, b) => {
+    const ta = a.at ? Date.parse(a.at) : 0;
+    const tb = b.at ? Date.parse(b.at) : 0;
+    return tb - ta;
+  });
+
+  return {
+    rows: deduped.slice(0, Math.max(1, Number(limit) || 100)),
+    gaps: [
+      "Resend-leveringsstatus (opens/bounces) staat niet in dit logboek.",
+      "Voor entries zonder outbox-regel komen status en onderwerp uit de mail-ledger-sleutels.",
+      "Activatiemail in de ledger betekent ‘link aangemaakt’; verzenden kan alsnog mislukt zijn zonder RESEND_API_KEY.",
+    ],
+  };
+}
+
+export function appendOutbox(ledger, entry) {
+  const book = normalizeLedger(ledger);
+  const row = {
+    id: entry.id || `mail-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    at: entry.at || new Date().toISOString(),
+    to: String(entry.to || "").trim().toLowerCase(),
+    subject: String(entry.subject || "").slice(0, 200),
+    type: entry.type || "overig",
+    status: entry.status || "unknown",
+    reason: entry.reason || null,
+    partnerId: entry.partnerId || null,
+    leadId: entry.leadId || null,
+  };
+  return {
+    ...book,
+    outbox: [row, ...book.outbox].slice(0, 500),
   };
 }
