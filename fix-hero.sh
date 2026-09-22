@@ -16,6 +16,7 @@ files=(
   src/components/fit-document.tsx
   src/components/ui/button.tsx
   src/components/marketing/soft-launch-keyframes.css
+  src/components/marketing/soft-launch-west-brabant.tsx
   src/styles.css
   src/lib/matchdesk.ts
   src/lib/finance.ts
