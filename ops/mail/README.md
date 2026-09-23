@@ -1,6 +1,6 @@
 # Partnermail — activatie, klus, bericht
 
-Outbound partnermail gebruikt de branded HTML-standaard (teal M-mark, wordmark, teal knop, plain-text alt). Afzender: `Matchdesk <info@getmatchdesk.nl>`, tenzij `FROM_EMAIL` anders staat.
+Outbound partnermail gebruikt de branded HTML-standaard (teal M-mark, wordmark, teal knop, plain-text alt). De footer sluit af met Koen · Matchdesk, `info@getmatchdesk.nl` en tekstlinks naar Instagram, Facebook en WhatsApp. Afzender: `Matchdesk <info@getmatchdesk.nl>`, tenzij `FROM_EMAIL` anders staat.
 
 De oude Netlify-functie `installer-signup` (set-password naar `/portaal`) hoort niet bij de live site. Aanmelden gaat via `/aanmelden` → `submitPartner` → `POST /api/workspace` met status **Te beoordelen**.
 
@@ -65,4 +65,4 @@ Voorbeeld van de registratie/activatie-mail (Pieter, RD Solar Group, demotoken):
 - `ops/mail/activatie-registratie.html`
 - `ops/mail/activatie-registratie.txt`
 
-Afspraken in elke partnermail: 1 lead · 1 installateur, eerste gewonnen klus €0, daarna 10% (max €400 panelen / €600 batterij). Geen kennismaking-CTA.
+Afspraken in elke partnermail: 1 lead · 1 installateur, eerste gewonnen klus €0, daarna 10% (max €400 panelen / €600 batterij). Geen kennismaking-CTA. Footer (HTML en plain text): [Instagram](https://www.instagram.com/matchdesknl/), [Facebook](https://www.facebook.com/matchdesknl), [WhatsApp](https://wa.me/31643610083).
