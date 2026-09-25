@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Calendar, Check, MapPin, Shield, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Wrap } from "@/components/site-shell";
+import { PartnerCommercialFacts } from "@/components/marketing/partner-commercial";
 import { SoftLaunchWestBrabant } from "@/components/marketing/soft-launch-west-brabant";
 import { useMatchdesk } from "@/lib/store";
 import { ProofBadge } from "@/components/proof-badge";
@@ -48,8 +49,8 @@ function Installateurs() {
               Bekijk het bedrijfsportaal <ArrowRight className="size-4" />
             </Link>
             <div className="mt-6 flex flex-wrap gap-5 text-sm">
-              <span className="inline-flex items-center gap-2"><Check className="size-4 text-teal" />Jij bent de enige</span>
-              <span className="inline-flex items-center gap-2"><Check className="size-4 text-teal" />Commissie als de klus doorgaat</span>
+              <span className="inline-flex items-center gap-2"><Check className="size-4 text-teal" />Per aanvraag de enige</span>
+              <span className="inline-flex items-center gap-2"><Check className="size-4 text-teal" />48 uur om te reageren</span>
             </div>
           </div>
           <div className="rounded-lg border border-line bg-white p-6 shadow-[var(--shadow-card)]">
@@ -75,11 +76,19 @@ function Installateurs() {
               </div>
             ))}
             <div className="mt-4 border-t border-line pt-4">
-              <strong className="text-[15px]">Alleen commissie als de klus doorgaat.</strong>
+              <strong className="text-[15px]">Commissie alleen als de opdracht gewonnen is.</strong>
               <p className="mt-2 text-[13px] text-muted">
-                De hoogte en voorwaarden spreken we vooraf samen af. Een match is geen garantie op een opdracht.
+                Eerste gewonnen klus €0, daarna 10% van de grondslag, standaard exclusief btw. Een match is geen garantie op een opdracht.
               </p>
             </div>
+          </div>
+        </Wrap>
+      </section>
+      <section className="pb-16">
+        <Wrap>
+          <h2 className="text-3xl">Wat vastligt</h2>
+          <div className="mt-4 max-w-3xl text-sm leading-7 text-muted">
+            <PartnerCommercialFacts />
           </div>
         </Wrap>
       </section>
@@ -90,7 +99,7 @@ function Installateurs() {
             {[
               ["01", "Meld je bedrijf aan", "Geef je specialismen, postcodegebieden en beschikbare capaciteit door."],
               ["02", "Laat je kwaliteit zien", "Matchdesk beoordeelt je aansluiting. Een aanmelding is nog geen automatische toelating."],
-              ["03", "Werk vanuit je portaal", "Bekijk je matches en planning. Houd je projecten en commissie overzichtelijk bij."],
+              ["03", "Werk vanuit je portaal", "Na toelating zet of bevestigt Matchdesk Actief samen met jou. Status en capaciteit worden in het portaal beheerbaar zodra dat scherm live is. Tot die tijd volg je daar matches, planning en commissie."],
             ].map(([n, t, d]) => (
               <article key={n} className="rounded-lg border border-line bg-white p-6">
                 <div className="mb-4 font-display text-2xl text-teal">{n}</div>

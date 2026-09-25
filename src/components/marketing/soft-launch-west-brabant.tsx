@@ -1,6 +1,7 @@
 /**
  * Soft launch West-Brabant scarcity banner.
- * Copy locked: max 8 exclusive slots, 1 lead · 1 installateur, no fake countdown.
+ * Max 8 partner slots = start capacity in West-Brabant, not a geographic monopoly.
+ * Per aanvraag 1:1. No fake countdown.
  */
 export function SoftLaunchWestBrabant({
   taken = 0,
@@ -23,19 +24,19 @@ export function SoftLaunchWestBrabant({
       />
       <div className="relative inline-flex items-center gap-2 rounded-full border border-bright/35 bg-bright/12 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-wide text-mint">
         <span className="size-2 rounded-full bg-bright motion-safe:animate-[md-sl-pulse_2.2s_cubic-bezier(.2,.75,.25,1)_infinite]" aria-hidden />
-        Soft launch West-Brabant · max 8 exclusieve plekken
+        Soft launch West-Brabant · max 8 partnerplekken
       </div>
-      <h2 className="relative mt-4 max-w-[18ch] font-display text-[clamp(1.6rem,3.2vw,2.25rem)] tracking-tight">
-        Claim jouw exclusieve plek
+      <h2 className="relative mt-4 max-w-[22ch] font-display text-[clamp(1.6rem,3.2vw,2.25rem)] tracking-tight">
+        Claim jouw plek in de soft launch
       </h2>
-      <p className="relative mt-2 mb-5 max-w-[42ch] text-[15px] leading-relaxed text-mint/70">
-        Geen leadveiling. 1 lead · 1 installateur. Wie zat is van multi-quote, meldt zich hier — en groeit mee vanaf de start.
+      <p className="relative mt-2 mb-5 max-w-[46ch] text-[15px] leading-relaxed text-mint/70">
+        Geen leadveiling. Per aanvraag één installateur. Acht plekken is de startcapaciteit in West-Brabant, geen alleenrecht op Breda.
       </p>
       <a
         href={ctaHref}
         className="relative inline-flex rounded-md bg-mint px-5 py-3.5 text-sm font-semibold text-night transition-transform hover:-translate-y-0.5"
       >
-        Claim jouw exclusieve plek →
+        Claim jouw plek →
       </a>
       <div
         className="relative mt-5 flex flex-wrap gap-2"
