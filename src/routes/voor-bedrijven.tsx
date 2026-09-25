@@ -29,7 +29,9 @@ function BedrijvenPage() {
               </Link>
             </Button>
             <Button asChild variant="onDark">
-              <Link to="/login">Ik heb al een account</Link>
+              <Link to="/login" search={{ role: "bedrijf", mode: "inloggen", next: "/bedrijf" }}>
+                Ik heb al een account
+              </Link>
             </Button>
           </div>
         </Wrap>
@@ -47,7 +49,10 @@ function BedrijvenPage() {
           <ul className="mt-6 space-y-3 text-sm text-mint/80">
             <li className="flex gap-2"><Check className="size-4 shrink-0 text-bright" /> Gratis aanmelden en beoordeeld worden</li>
             <li className="flex gap-2"><Check className="size-4 shrink-0 text-bright" /> 1:1-aanvragen na toelating</li>
-            <li className="flex gap-2"><Check className="size-4 shrink-0 text-bright" /> Eigen bedrijfsportaal</li>
+            <li className="flex gap-2">
+              <Check className="size-4 shrink-0 text-bright" />
+              <Link to="/bedrijf">Eigen bedrijfsportaal</Link>
+            </li>
             <li className="flex gap-2"><Check className="size-4 shrink-0 text-bright" /> Geen cc naar concurrenten</li>
           </ul>
         </Wrap>
