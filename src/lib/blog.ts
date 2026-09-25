@@ -118,7 +118,7 @@ export const ARTICLES: Article[] = [
     body: [
       "Exclusief-proof is de kwaliteitscheck voor Actieve Matchdesk-partners. Je betaalt voor de keuring, niet voor een plaats in een veiling. We kijken naar KvK, reviews en of je reageert.",
       "Slaagt de check, dan mag je de badge ‘Exclusief partner gecontroleerd door Matchdesk’. Zakt hij, dan geen badge. We kopen je geen leads.",
-      "De commissie blijft los: eerste gewonnen klus €0, daarna 10% van de dealwaarde (max. €400 bij panelen, €600 bij batterij of combi). Dat spreek je vooraf af. De huiseigenaar betaalt Matchdesk niets.",
+      "De commissie blijft los: eerste gewonnen klus €0, daarna 10% van de afgesproken grondslag, standaard exclusief btw (max. €400 bij panelen, €600 bij batterij of combi). Commissie alleen als de opdracht als gewonnen is bevestigd. De huiseigenaar betaalt Matchdesk niets.",
       "Early-bird €149 is voor wie nu instapt. Geen belofte op volume. Wel een helder keurmerk voor wie 1:1-aanvragen in het eigen werkgebied wil, zonder drie concurrenten in cc.",
     ],
   },

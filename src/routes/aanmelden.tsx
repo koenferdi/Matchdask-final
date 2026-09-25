@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
+import { PartnerCommercialFacts } from "@/components/marketing/partner-commercial";
 import { SoftLaunchWestBrabant } from "@/components/marketing/soft-launch-west-brabant";
 import { PRODUCTS, type Product } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
@@ -49,7 +50,12 @@ function Aanmelden() {
               </div>
               <h2 className="text-3xl">Je aanmelding is binnen.</h2>
               <p className="mt-3 text-muted">
-                Er gaat nu nog geen activatiemail uit. Die volgt nadat KvK en werkgebied kloppen. Eén lead, één installateur. Eerste gewonnen klus €0, daarna 10%.
+                Er gaat nu nog geen activatiemail uit. Die volgt nadat KvK en werkgebied kloppen. Eén lead, één installateur. Na een matchmelding heb je 48 uur om te accepteren of te weigeren. Eerste gewonnen klus €0, daarna 10% van de grondslag, standaard exclusief btw (max. €400 panelen, €600 batterij of combinatie).
+              </p>
+              <p className="mt-3 text-sm">
+                <Link to="/voorwaarden-installateurs" className="font-semibold text-teal">
+                  Voorwaarden voor installateurs
+                </Link>
               </p>
               <div className="mt-6 flex gap-3">
                 <Button asChild>
@@ -90,7 +96,7 @@ function Aanmelden() {
     <main className="bg-paper py-16 text-ink">
       <Wrap>
         <PageIntro kicker="Gratis aanmelden" title="Jouw bedrijf. Ons netwerk.">
-          Geen inschrijfgeld. Je vult KvK, vak en werkgebied in. Daarna beoordelen wij. Een badge is later optioneel.
+          Geen inschrijfgeld, geen abonnement en geen lock-in. Je vult KvK, vak en werkgebied in. Daarna beoordelen wij. Een badge is later optioneel.
         </PageIntro>
         <div className="mt-8">
           <SoftLaunchWestBrabant ctaHref="#aanmelden" taken={0} />
@@ -153,7 +159,7 @@ function Aanmelden() {
           </section>
           <aside className="h-fit rounded-lg border border-line bg-white p-6 text-sm text-muted">
             <h3 className="font-display text-2xl text-ink">Geen abonnement.</h3>
-            <p className="mt-3">Commissie geldt alleen als de klus doorgaat. Eerste gewonnen klus via Matchdesk: €0 commissie.</p>
+            <PartnerCommercialFacts />
           </aside>
         </div>
       </Wrap>
