@@ -33,7 +33,7 @@ function VoorwaardenInstallateurs() {
             Eerste gewonnen klus via Matchdesk: <strong>€0</strong>. Daarna <strong>10%</strong> van de afgesproken grondslag, tot max. <strong>€400</strong> bij panelen en <strong>€600</strong> bij batterij of combinatie. Geen abonnement.
           </p>
           <p>
-            De standaard commissiegrondslag is de afgesproken dealwaarde <strong>exclusief btw</strong>. Leg de offertewaarde vast voordat een opdracht als gewonnen wordt bevestigd. Een andere btw-afspraak geldt alleen als die schriftelijk is vastgelegd, en eveneens vóór die bevestiging.
+            Commissie rekenen we over de grondslag (standaard exclusief btw). Leg de offertewaarde vast voordat een opdracht als gewonnen wordt bevestigd. Een andere btw-afspraak geldt alleen als die schriftelijk is vastgelegd, en eveneens vóór die bevestiging.
           </p>
           <h2>Annulering</h2>
           <p>
@@ -41,7 +41,7 @@ function VoorwaardenInstallateurs() {
           </p>
           <h2>Gratis aanmelden en portaal</h2>
           <p>
-            Aanmelden en je profiel zijn gratis. Er is geen abonnement en geen lock-in. Na toelating (de Gate) beheer je in het bedrijfsportaal zelf je status (Actief of pauze) en je capaciteit.
+            Aanmelden en je profiel zijn gratis. Er is geen abonnement en geen lock-in. Na toelating (de Gate) zet of bevestigt Matchdesk de status Actief samen met de partner. Status en capaciteit worden in het bedrijfsportaal beheerbaar zodra dat scherm live is.
           </p>
           <p>
             Matchdesk registreert commissie, uitgereikte facturen en gecontroleerde ontvangsten afzonderlijk. Een factuur is geen bewijs van ontvangen geld.
