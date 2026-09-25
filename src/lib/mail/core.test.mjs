@@ -19,6 +19,7 @@ import {
   renderMessageEmail,
   listMailActivity,
   appendOutbox,
+  recordOutbox,
 } from "./core.mjs";
 
 const ORIGIN = "https://www.getmatchdesk.nl";
@@ -311,4 +312,142 @@ test("listMailActivity toont outbox en ledger-sleutels", () => {
   assert.ok(listed.rows.some((row) => row.type === "activatie" && row.status === "sent"));
   assert.ok(listed.rows.some((row) => row.type === "klus" && row.status === "queued"));
   assert.ok(listed.gaps.length >= 1);
+});
+
+test("appendOutbox en listMailActivity tonen cold en fu zonder body", () => {
+  let ledger = emptyLedger();
+  ledger = appendOutbox(ledger, {
+    to: "Piet@Solar.nl",
+    subject: "Korte introductie Matchdesk",
+    type: "cold",
+    status: "sent",
+    messageId: " <gmail-cold-1> ",
+    partnerId: "P-RD",
+    at: "2026-09-25T10:00:00.000Z",
+    html: "<p>niet bewaren</p>",
+    text: "niet bewaren",
+    body: "niet bewaren",
+  });
+  ledger = appendOutbox(ledger, {
+    to: "piet@solar.nl",
+    subject: "Follow-up Matchdesk",
+    type: "fu",
+    status: "sent",
+    messageId: "<gmail-fu-1>",
+    at: "2026-09-25T12:00:00.000Z",
+  });
+  ledger = appendOutbox(ledger, {
+    to: "ander@bedrijf.nl",
+    subject: "Losse notitie",
+    type: "overig",
+    at: "2026-09-25T11:00:00.000Z",
+  });
+
+  assert.equal(ledger.outbox.length, 3);
+  const cold = ledger.outbox.find((row) => row.type === "cold");
+  assert.equal(cold.to, "piet@solar.nl");
+  assert.equal(cold.messageId, "<gmail-cold-1>");
+  assert.equal(cold.html, undefined);
+  assert.equal(cold.text, undefined);
+  assert.equal(cold.body, undefined);
+  assert.ok(ledger.outbox.some((row) => row.type === "fu"));
+  assert.ok(ledger.outbox.some((row) => row.type === "overig" && row.status === "unknown"));
+  const withoutId = appendOutbox(
+    appendOutbox(emptyLedger(), { to: "a@b.nl", subject: "Eén", type: "overig" }),
+    { to: "a@b.nl", subject: "Twee", type: "overig" },
+  );
+  assert.equal(withoutId.outbox.length, 2);
+
+  const listed = listMailActivity({
+    ledger,
+    partners: [partner({ status: "Actief", email: "piet@solar.nl" })],
+    leads: [],
+  });
+  assert.equal(listed.rows.find((row) => row.type === "cold").subject, "Korte introductie Matchdesk");
+  assert.equal(listed.rows.find((row) => row.type === "cold").company, "RD Solar Group");
+  assert.equal(listed.rows.find((row) => row.type === "fu").messageId, "<gmail-fu-1>");
+  assert.ok(listed.rows.some((row) => row.type === "overig"));
+  const order = listed.rows.map((row) => row.type);
+  assert.ok(order.indexOf("fu") < order.indexOf("overig"));
+  assert.ok(order.indexOf("overig") < order.indexOf("cold"));
+});
+
+test("recordOutbox slaat een dubbele messageId over en laat systeemrijen staan", () => {
+  const first = recordOutbox(emptyLedger(), {
+    to: "info@partner.nl",
+    subject: "Matchdesk — korte introductie",
+    type: "cold",
+    messageId: "<abc@mail.gmail.com>",
+    partnerId: "P-RD",
+    sentAt: "2026-09-25T10:00:00.000Z",
+    html: "<p>geheim</p>",
+    body: "geheim",
+  });
+  assert.equal(first.ok, true);
+  assert.equal(first.duplicate, false);
+  assert.equal(first.row.status, "sent");
+  assert.equal(first.row.type, "cold");
+  assert.equal(first.row.at, "2026-09-25T10:00:00.000Z");
+  assert.equal(first.row.html, undefined);
+  assert.equal(first.row.body, undefined);
+  assert.equal(first.ledger.outbox.length, 1);
+
+  const again = recordOutbox(first.ledger, {
+    to: "iemand@anders.nl",
+    subject: "Dit mag niet overschrijven",
+    type: "fu",
+    status: "failed",
+    messageId: "<abc@mail.gmail.com>",
+  });
+  assert.equal(again.ok, true);
+  assert.equal(again.duplicate, true);
+  assert.equal(again.ledger.outbox.length, 1);
+  assert.equal(again.row.subject, "Matchdesk — korte introductie");
+  assert.equal(again.row.type, "cold");
+  assert.equal(again.ledger.outbox[0].status, "sent");
+
+  const withSystem = appendOutbox(again.ledger, {
+    to: "info@rdsolargroup.nl",
+    subject: "Activeer je Matchdesk-account",
+    type: "activatie",
+    status: "sent",
+    partnerId: "P-RD",
+    at: "2026-09-22T08:00:00.000Z",
+  });
+  const fu = recordOutbox(withSystem, {
+    to: "info@partner.nl",
+    subject: "Korte follow-up",
+    type: "FU",
+    messageId: "<def@mail.gmail.com>",
+  });
+  assert.equal(fu.ok, true);
+  assert.equal(fu.duplicate, false);
+  assert.equal(fu.row.type, "fu");
+  assert.equal(fu.ledger.outbox.length, 3);
+
+  const listed = listMailActivity({
+    ledger: fu.ledger,
+    partners: [partner()],
+    leads: [],
+  });
+  assert.ok(listed.rows.some((row) => row.type === "activatie" && row.status === "sent"));
+  assert.ok(listed.rows.some((row) => row.type === "cold"));
+  assert.ok(listed.rows.some((row) => row.type === "fu" && row.subject === "Korte follow-up"));
+
+  const direct = appendOutbox(fu.ledger, {
+    to: "info@partner.nl",
+    subject: "nog een keer",
+    type: "cold",
+    messageId: "<abc@mail.gmail.com>",
+  });
+  assert.equal(direct.outbox.length, 3);
+
+  assert.equal(recordOutbox(emptyLedger(), { to: "geen-mail", subject: "x", type: "cold" }).status, 400);
+  assert.equal(recordOutbox(emptyLedger(), { to: "a@b.nl", subject: "  ", type: "cold" }).ok, false);
+  assert.equal(recordOutbox(emptyLedger(), { to: "a@b.nl", subject: "Hoi", type: "nieuwsbrief" }).ok, false);
+  assert.equal(recordOutbox(emptyLedger(), { to: "a@b.nl", subject: "Hoi", type: "cold", sentAt: "geen-datum" }).ok, false);
+  assert.equal(
+    recordOutbox(emptyLedger(), { to: "a@b.nl", subject: "Hoi", type: "cold", status: "bounced" }).ok,
+    false,
+  );
 });

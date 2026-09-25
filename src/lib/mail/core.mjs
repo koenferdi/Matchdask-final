@@ -15,6 +15,10 @@ export function emptyLedger() {
   return { byPartner: {}, sentKeys: {}, pendingJobs: [], outbox: [] };
 }
 
+/** Outbox types. Resend system mail plus manually logged outreach from info@. */
+export const MAIL_TYPES = ["activatie", "bevestiging", "klus", "bericht", "cold", "fu", "overig"];
+const MAIL_LOG_STATUSES = ["sent", "failed", "queued"];
+
 export function newToken() {
   return randomBytes(32).toString("base64url");
 }
@@ -259,6 +263,29 @@ function findByToken(ledger, token) {
 
 function validEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+}
+
+function canonicalType(type) {
+  const value = String(type || "").trim().toLowerCase();
+  return MAIL_TYPES.includes(value) ? value : "overig";
+}
+
+function cleanMessageId(value) {
+  if (value == null) return null;
+  const text = String(value).trim();
+  return text ? text.slice(0, 200) : null;
+}
+
+function cleanId(value) {
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  const text = String(value).trim();
+  return text ? text.slice(0, 80) : null;
+}
+
+function cleanReason(value) {
+  if (value == null) return null;
+  const text = String(value).trim();
+  return text ? text.slice(0, 300) : null;
 }
 
 export function decideGate({ partners, ledger, partnerId, resend, now, token, origin }) {
@@ -642,6 +669,7 @@ export function listMailActivity({ ledger, partners, leads, limit = 100 } = {}) 
       reason: entry.reason || null,
       partnerId: entry.partnerId || null,
       leadId: entry.leadId || null,
+      messageId: entry.messageId || null,
       company: entry.partnerId ? partnerById.get(entry.partnerId)?.name || null : null,
       leadName: entry.leadId ? leadById.get(entry.leadId)?.name || null : null,
       source: "outbox",
@@ -789,25 +817,94 @@ export function listMailActivity({ ledger, partners, leads, limit = 100 } = {}) 
       "Resend-leveringsstatus (opens/bounces) staat niet in dit logboek.",
       "Voor entries zonder outbox-regel komen status en onderwerp uit de mail-ledger-sleutels.",
       "Activatiemail in de ledger betekent ‘link aangemaakt’; verzenden kan alsnog mislukt zijn zonder RESEND_API_KEY.",
+      "Cold- en follow-upmails via Gmail staan hier alleen nadat ze handmatig zijn gelogd. Er is geen live Inbox/Sent-sync.",
     ],
   };
 }
 
 export function appendOutbox(ledger, entry) {
   const book = normalizeLedger(ledger);
+  const safe = entry && typeof entry === "object" ? entry : {};
+  const messageId = cleanMessageId(safe.messageId);
+  if (messageId && book.outbox.some((row) => row && row.messageId === messageId)) {
+    return book;
+  }
   const row = {
-    id: entry.id || `mail-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-    at: entry.at || new Date().toISOString(),
-    to: String(entry.to || "").trim().toLowerCase(),
-    subject: String(entry.subject || "").slice(0, 200),
-    type: entry.type || "overig",
-    status: entry.status || "unknown",
-    reason: entry.reason || null,
-    partnerId: entry.partnerId || null,
-    leadId: entry.leadId || null,
+    id: safe.id || `mail-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    at: safe.at || new Date().toISOString(),
+    to: String(safe.to || "").trim().toLowerCase(),
+    subject: String(safe.subject || "").slice(0, 200),
+    type: canonicalType(safe.type),
+    status: safe.status || "unknown",
+    reason: safe.reason ? String(safe.reason).slice(0, 300) : null,
+    partnerId: safe.partnerId || null,
+    leadId: safe.leadId || null,
   };
+  if (messageId) row.messageId = messageId;
   return {
     ...book,
     outbox: [row, ...book.outbox].slice(0, 500),
   };
+}
+
+/**
+ * Validate one manually logged mail and append it to the outbox.
+ * Does not store HTML, text, or body. The same messageId is a no-op.
+ * Status defaults to sent. Used by POST /api/mail/log.
+ */
+export function recordOutbox(ledger, input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return { ok: false, status: 400, message: "Ongeldige invoer." };
+  }
+  const to = String(input.to || "").trim().toLowerCase();
+  if (!validEmail(to)) {
+    return { ok: false, status: 400, message: "Geldig e-mailadres (to) is verplicht." };
+  }
+  const subject = String(input.subject || "").trim();
+  if (!subject) {
+    return { ok: false, status: 400, message: "Onderwerp is verplicht." };
+  }
+  const type = String(input.type || "").trim().toLowerCase();
+  if (!MAIL_TYPES.includes(type)) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Type moet activatie, bevestiging, klus, bericht, cold, fu of overig zijn.",
+    };
+  }
+  const status =
+    input.status == null || String(input.status).trim() === ""
+      ? "sent"
+      : String(input.status).trim().toLowerCase();
+  if (!MAIL_LOG_STATUSES.includes(status)) {
+    return { ok: false, status: 400, message: "Status moet sent, failed of queued zijn." };
+  }
+  let at = new Date().toISOString();
+  if (input.sentAt != null && String(input.sentAt).trim() !== "") {
+    const parsed = Date.parse(input.sentAt);
+    if (Number.isNaN(parsed)) {
+      return { ok: false, status: 400, message: "sentAt is geen geldige datum." };
+    }
+    at = new Date(parsed).toISOString();
+  }
+  const messageId = cleanMessageId(input.messageId);
+  const book = normalizeLedger(ledger);
+  if (messageId) {
+    const existing = book.outbox.find((row) => row && row.messageId === messageId);
+    if (existing) {
+      return { ok: true, duplicate: true, ledger: book, row: existing };
+    }
+  }
+  const next = appendOutbox(book, {
+    to,
+    subject,
+    type,
+    status,
+    reason: cleanReason(input.reason),
+    partnerId: cleanId(input.partnerId),
+    leadId: cleanId(input.leadId),
+    messageId,
+    at,
+  });
+  return { ok: true, duplicate: false, ledger: next, row: next.outbox[0] };
 }
