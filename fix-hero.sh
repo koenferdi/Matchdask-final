@@ -4,7 +4,7 @@ set -euo pipefail
 APP=/opt/matchdesk
 BASE=https://raw.githubusercontent.com/koenferdi/Matchdask-final/main
 cd "$APP"
-mkdir -p src/routes/api/partner src/routes/api/mail src/lib/mail src/lib src/components /opt/matchdesk/data
+mkdir -p src/routes/api/partner src/routes/api/mail src/lib/mail src/lib src/components/marketing src/components/ui /opt/matchdesk/data
 rm -f src/routes/rapport.voorbeeld.tsx src/routes/exclusief.voorbeeld.tsx
 files=(
   src/components/cinema-hero.tsx
@@ -14,6 +14,8 @@ files=(
   src/components/path-choice.tsx
   src/components/proof-badge.tsx
   src/components/fit-document.tsx
+  src/components/marketing/partner-commercial.tsx
+  src/components/marketing/soft-launch-west-brabant.tsx
   src/components/ui/button.tsx
   src/styles.css
   src/lib/matchdesk.ts
@@ -21,6 +23,7 @@ files=(
   src/lib/blog.ts
   src/lib/workspace-file.ts
   src/lib/owner.ts
+  src/lib/partner-portal.mjs
   src/lib/mail/core.mjs
   src/lib/mail/server.ts
   src/lib/auth/gates.tsx
@@ -37,7 +40,10 @@ files=(
   src/routes/activeren.tsx
   src/routes/wachtlijst.tsx
   src/routes/klant.tsx
+  src/routes/bedrijf.tsx
   src/routes/beheer.tsx
+  src/routes/voorwaarden.tsx
+  src/routes/voorwaarden-installateurs.tsx
   src/routes/privacy.tsx
   src/routes/cookies.tsx
   src/routes/api/workspace.ts
