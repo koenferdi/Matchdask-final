@@ -54,6 +54,32 @@ function p(html, last = false) {
   return `<p style="margin:${last ? "0" : "0 0 14px"};">${html}</p>`;
 }
 
+const SOCIAL_LINKS = [
+  { label: "Instagram", url: "https://www.instagram.com/matchdesknl/" },
+  { label: "Facebook", url: "https://www.facebook.com/matchdesknl" },
+  { label: "WhatsApp", url: "https://wa.me/31643610083" },
+];
+
+function brandFooter() {
+  const socialHtml = SOCIAL_LINKS.map(
+    (item) =>
+      `<a href="${esc(item.url)}" style="color:#9CA3AF;text-decoration:underline;">${esc(item.label)}</a>`,
+  ).join(" · ");
+  return {
+    html: `Groet,<br><strong style="color:#1F2A37;">Koen</strong> · Matchdesk<br>
+    <span style="color:#9CA3AF;font-size:12px;">info@getmatchdesk.nl</span><br>
+    <span style="color:#9CA3AF;font-size:12px;">${socialHtml}</span>`,
+    textLines: [
+      "Groet,",
+      "Koen · Matchdesk",
+      "info@getmatchdesk.nl",
+      ...SOCIAL_LINKS.map((item) => `${item.label}: ${item.url}`),
+    ],
+  };
+}
+
+const BRAND_FOOTER = brandFooter();
+
 export function brandedEmail({ title, bodyHtml, ctaLabel, ctaUrl }) {
   const safeTitle = esc(title);
   const safeLabel = esc(ctaLabel);
@@ -84,8 +110,7 @@ export function brandedEmail({ title, bodyHtml, ctaLabel, ctaUrl }) {
     <p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#9CA3AF;">Of open: ${safeUrl}</p>
   </td></tr>
   <tr><td style="padding-top:28px;border-top:1px solid #EEF1F5;font-size:13px;line-height:1.55;color:#6B7280;">
-    Groet,<br><strong style="color:#1F2A37;">Koen</strong> · Matchdesk<br>
-    <span style="color:#9CA3AF;font-size:12px;">info@getmatchdesk.nl</span>
+    ${BRAND_FOOTER.html}
   </td></tr>
 </table></td></tr></table>
 </body></html>`;
@@ -93,7 +118,7 @@ export function brandedEmail({ title, bodyHtml, ctaLabel, ctaUrl }) {
 }
 
 function textFooter(lines) {
-  return [...lines, "", "Groet,", "Koen · Matchdesk", "info@getmatchdesk.nl", ""].join("\n");
+  return [...lines, "", ...BRAND_FOOTER.textLines, ""].join("\n");
 }
 
 export function renderActivationEmail({ greeting, company, activationUrl: url }) {
