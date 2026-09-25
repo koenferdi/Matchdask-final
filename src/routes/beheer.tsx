@@ -690,6 +690,27 @@ type MailRow = {
   leadName?: string | null;
 };
 
+function mailTypeLabel(type: string) {
+  switch (type) {
+    case "activatie":
+      return "Activatie";
+    case "bevestiging":
+      return "Bevestiging";
+    case "klus":
+      return "Klus";
+    case "bericht":
+      return "Bericht";
+    case "cold":
+      return "Cold";
+    case "fu":
+      return "Follow-up";
+    case "overig":
+      return "Overig";
+    default:
+      return type;
+  }
+}
+
 function MailLog() {
   const [rows, setRows] = useState<MailRow[]>([]);
   const [gaps, setGaps] = useState<string[]>([]);
@@ -725,9 +746,9 @@ function MailLog() {
     <section>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl">Mail</h2>
+          <h2 className="font-display text-2xl">Verzendlog</h2>
           <p className="text-sm text-mint/70">
-            Recent outbound verkeer: activatie, bevestiging, klus en bericht. Bron: mail-ledger + outbox.
+            Automatische Resend-mails (activatie, bevestiging, klus, bericht) en gelogde cold- en follow-up outreach vanaf info@. Bron: mail-ledger.
           </p>
         </div>
         <Button size="sm" variant="onDark" onClick={() => reload()} disabled={loading}>
@@ -756,8 +777,17 @@ function MailLog() {
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <strong className="font-display text-base">{row.subject || row.type}</strong>
-                  <p className="mt-1 text-xs text-mint/60">
-                    {row.at ? new Date(row.at).toLocaleString("nl-NL") : "Nog geen tijdstip"} · {row.type}
+                  <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-mint/60">
+                    <span>{row.at ? new Date(row.at).toLocaleString("nl-NL") : "Nog geen tijdstip"}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        row.type === "cold" || row.type === "fu"
+                          ? "bg-bright/20 text-bright"
+                          : "bg-white/10 text-mint/80"
+                      }`}
+                    >
+                      {mailTypeLabel(row.type)}
+                    </span>
                   </p>
                   <p className="mt-1 text-xs">
                     Naar <a className="underline" href={`mailto:${row.to}`}>{row.to || "—"}</a>

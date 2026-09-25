@@ -11,6 +11,7 @@ import {
   listActivationStatus,
   listMailActivity,
   appendOutbox,
+  recordOutbox,
   markConfirmationSent,
   markJobsSent,
   markKeySent,
@@ -24,10 +25,31 @@ type MailResult = { ok: boolean; skipped?: boolean; reason?: string };
 
 type Outbound = { to: string; subject: string; html: string; text: string };
 
+export type MailActivityType =
+  | "activatie"
+  | "bevestiging"
+  | "klus"
+  | "bericht"
+  | "cold"
+  | "fu"
+  | "overig";
+
 type MailMeta = {
-  type?: "activatie" | "bevestiging" | "klus" | "bericht" | "overig";
+  type?: MailActivityType;
   partnerId?: string;
   leadId?: string;
+};
+
+export type MailLogInput = {
+  to?: string;
+  subject?: string;
+  type?: string;
+  status?: string;
+  reason?: string;
+  partnerId?: string;
+  leadId?: string;
+  messageId?: string;
+  sentAt?: string;
 };
 
 function dataDir() {
@@ -125,6 +147,32 @@ export async function sendMail(message: Outbound, meta: MailMeta = {}): Promise<
     console.error("[matchdesk-mail] outbox log", err);
   }
   return result;
+}
+
+export function appendMailLog(input: MailLogInput) {
+  const recorded = recordOutbox(loadLedger(), input);
+  if (!recorded.ok) {
+    return { ok: false as const, status: recorded.status || 400, error: recorded.message || "Ongeldig." };
+  }
+  if (!recorded.duplicate) {
+    try {
+      saveLedger(recorded.ledger);
+    } catch (err) {
+      console.error("[matchdesk-mail] outbox log", err);
+      return { ok: false as const, status: 500, error: "Logboek wegschrijven mislukt." };
+    }
+  }
+  const row = recorded.row || {};
+  return {
+    ok: true as const,
+    duplicate: Boolean(recorded.duplicate),
+    id: row.id ?? null,
+    at: row.at ?? null,
+    to: row.to ?? null,
+    subject: row.subject ?? null,
+    type: row.type ?? null,
+    status: row.status ?? null,
+  };
 }
 
 export function mailActivity(limit = 100) {

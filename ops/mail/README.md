@@ -53,12 +53,35 @@ Bronnen in `mail-ledger.json`:
 
 | Bron | Inhoud |
 |---|---|
-| `outbox[]` | Elke `sendMail`-poging (to, subject, type, status sent/failed/queued) |
+| `outbox[]` | Elke `sendMail`-poging én handmatig gelogde outreach (to, subject, type, status sent/failed/queued, optioneel `messageId`) |
 | `byPartner` | Activatielink + bevestigingsmail-tijdstempels |
 | `sentKeys` | Verzonden klus-/berichtmails |
 | `pendingJobs` | Klusmails in wachtrij |
 
-Bekende gaten: geen Resend delivery/open/bounce; activatieregel in de ledger betekent “link aangemaakt”, niet per se “Resend OK”. Nieuwe pogingen vullen `outbox` wel.
+Types in de Verzendlog: `activatie`, `bevestiging`, `klus`, `bericht` (Resend via `sendMail`), plus `cold`, `fu` en `overig` voor outreach die buiten de app om gaat.
+
+Bekende gaten: geen Resend delivery/open/bounce; activatieregel in de ledger betekent “link aangemaakt”, niet per se “Resend OK”. Nieuwe pogingen vullen `outbox` wel. Geen Gmail OAuth en geen live Inbox/Sent-sync.
+
+## Cold en follow-up handmatig loggen
+
+Partner-cold en follow-up gaan via Gmail “Send mail as” `info@getmatchdesk.nl`. Die mails komen niet vanzelf in de Verzendlog. Na het versturen log je ze als eigenaar, met dezelfde cookie-sessie als `/beheer`:
+
+`POST /api/mail/log`
+
+```json
+{
+  "to": "info@partner.nl",
+  "subject": "Matchdesk — korte introductie",
+  "type": "cold",
+  "messageId": "<gmail-message-id>",
+  "partnerId": "P-…",
+  "sentAt": "2026-09-25T10:00:00.000Z"
+}
+```
+
+Verplicht: `to` (één adres), `subject`, `type` (`cold`, `fu`, `overig`, of een systeemtype). Optioneel: `status` (standaard `sent`; ook `failed` of `queued`), `reason`, `partnerId`, `leadId`, `messageId`, `sentAt` (wordt `at` in de ledger). Geen HTML, tekst of body meesturen — die worden niet opgeslagen.
+
+Dezelfde `messageId` nog eens posten slaat de dubbele regel over (`duplicate: true`). Zonder `messageId` is elke post een nieuwe regel. `GET /api/mail/log` blijft de lijst voor de cockpit; zonder eigenaarssessie antwoordt GET én POST met 401.
 
 Voorbeeld van de registratie/activatie-mail (Pieter, RD Solar Group, demotoken):
 
