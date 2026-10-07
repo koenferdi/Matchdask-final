@@ -88,4 +88,4 @@ Voorbeeld van de registratie/activatie-mail (Pieter, RD Solar Group, demotoken):
 - `ops/mail/activatie-registratie.html`
 - `ops/mail/activatie-registratie.txt`
 
-Afspraken in elke partnermail: 1 lead · 1 installateur, eerste gewonnen klus €0, daarna 10% (max €400 panelen / €600 batterij). Geen kennismaking-CTA.
+Afspraken in elke partnermail: 1 lead · 1 installateur, eerste gewonnen klus €0, daarna vast €225 per thuisbatterij-klus en €175 per zonnepanelen-klus (founding-tarief, excl. btw). Geen kennismaking-CTA.
