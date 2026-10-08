@@ -109,6 +109,9 @@ function Bedrijf() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/aanmelden">Meld je bedrijf aan</Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/bedrijf">Open het bedrijfsportaal</Link>
+            </Button>
           </div>
         </div>
       ) : (

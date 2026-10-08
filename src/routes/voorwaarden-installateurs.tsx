@@ -41,7 +41,7 @@ function VoorwaardenInstallateurs() {
           </p>
           <h2>Gratis aanmelden en portaal</h2>
           <p>
-            Aanmelden en je profiel zijn gratis. Er is geen abonnement en geen lock-in. Na toelating (de Gate) zet of bevestigt Matchdesk de status Actief samen met de partner. Status en capaciteit worden in het bedrijfsportaal beheerbaar zodra dat scherm live is.
+            Aanmelden en je profiel zijn gratis. Er is geen abonnement en geen lock-in. Na toelating (de Gate) beheer je in het bedrijfsportaal zelf of je Actief of gepauzeerd bent, en je capaciteit.
           </p>
           <p>
             Matchdesk registreert commissie, uitgereikte facturen en gecontroleerde ontvangsten afzonderlijk. Een factuur is geen bewijs van ontvangen geld.

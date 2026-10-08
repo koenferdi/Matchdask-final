@@ -1,3 +1,5 @@
+import { isMatchablePartner } from "./partner-portal.mjs";
+
 export const PRODUCTS = [
   "Zonnepanelen",
   "Thuisbatterij",
@@ -268,7 +270,7 @@ export function regionLabel(postcode: string) {
 
 export function findPartnerFor(lead: Pick<Lead, "product" | "postcode">, partners: Partner[]) {
   const prefix = postcodePrefix(lead.postcode);
-  const active = partners.filter((p) => p.status === "Actief" && !p.example);
+  const active = partners.filter((p) => isMatchablePartner(p));
   const regional = active.filter(
     (p) => p.prefixes.includes(prefix) && p.products.includes(lead.product),
   );

@@ -99,7 +99,7 @@ function Installateurs() {
             {[
               ["01", "Meld je bedrijf aan", "Geef je specialismen, postcodegebieden en beschikbare capaciteit door."],
               ["02", "Laat je kwaliteit zien", "Matchdesk beoordeelt je aansluiting. Een aanmelding is nog geen automatische toelating."],
-              ["03", "Werk vanuit je portaal", "Na toelating zet of bevestigt Matchdesk Actief samen met jou. Status en capaciteit worden in het portaal beheerbaar zodra dat scherm live is. Tot die tijd volg je daar matches, planning en commissie."],
+              ["03", "Werk vanuit je portaal", "Na toelating beheer je in het bedrijfsportaal zelf of je Actief of gepauzeerd bent, en je capaciteit. Daar volg je ook matches, planning en commissie."],
             ].map(([n, t, d]) => (
               <article key={n} className="rounded-lg border border-line bg-white p-6">
                 <div className="mb-4 font-display text-2xl text-teal">{n}</div>
