@@ -25,6 +25,23 @@ import {
 const ORIGIN = "https://www.getmatchdesk.nl";
 const DEMO_URL = `${ORIGIN}/activeren?token=DEMO-TOKEN-RD-SOLAR`;
 const NOW = Date.parse("2026-09-22T08:00:00.000Z");
+const SOCIAL_URLS = [
+  "https://www.instagram.com/matchdesknl/",
+  "https://www.facebook.com/matchdesknl",
+  "https://wa.me/31643610083",
+];
+
+function assertSocials(mail) {
+  for (const url of SOCIAL_URLS) {
+    assert.ok(mail.html.includes(url), url);
+    assert.ok(mail.text.includes(url), url);
+  }
+  assert.match(mail.html, /Instagram<\/a> · <a [^>]+>Facebook<\/a> · <a [^>]+>WhatsApp<\/a>/);
+  assert.match(mail.text, /Instagram: https:\/\/www\.instagram\.com\/matchdesknl\//);
+  assert.match(mail.text, /Facebook: https:\/\/www\.facebook\.com\/matchdesknl/);
+  assert.match(mail.text, /WhatsApp: https:\/\/wa\.me\/31643610083/);
+  assert.doesNotMatch(mail.html, /<img[^>]+(?:instagram|facebook|whatsapp)/i);
+}
 
 function partner(patch = {}) {
   return {
@@ -72,8 +89,33 @@ test("activatiemail volgt het branded voorbeeld", () => {
   assert.match(mail.html, /Activeer account/);
   assert.match(mail.html, /DEMO-TOKEN-RD-SOLAR/);
   assert.match(mail.html, /info@getmatchdesk\.nl/);
+  assertSocials(mail);
   assert.doesNotMatch(`${mail.html}\n${mail.text}`, /kennismaking/i);
   assert.equal(mail.subject, "Activeer je Matchdesk-account");
+});
+
+test("bevestiging, klus en bericht erven dezelfde social footer", () => {
+  const mails = [
+    renderConfirmationEmail({
+      greeting: "Pieter",
+      company: "RD Solar Group",
+      portalUrl: `${ORIGIN}/bedrijf`,
+    }),
+    renderJobEmail({
+      greeting: "Pieter",
+      company: "RD Solar Group",
+      lead: lead(),
+      portalUrl: `${ORIGIN}/bedrijf`,
+    }),
+    renderMessageEmail({
+      greeting: "Pieter",
+      company: "RD Solar Group",
+      preview: "De schouwing kan dinsdag.",
+      portalUrl: `${ORIGIN}/bedrijf`,
+      dossier: "MD-1",
+    }),
+  ];
+  for (const mail of mails) assertSocials(mail);
 });
 
 test("bedrijfsnaam wordt ge-escaped", () => {
