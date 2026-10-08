@@ -12,9 +12,10 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { isOwner } from "@/lib/owner";
 
 const NAV = [
-  { to: "/", label: "Oriëntatie" },
+  { to: "/", label: "Home" },
   { to: "/woning", label: "Voor je woning" },
-  { to: "/voor-bedrijven", label: "Voor bedrijven" },
+  { to: "/aanmelden", label: "Word partner" },
+  { to: "/tools", label: "Tools" },
   { to: "/blog", label: "Inzicht" },
 ] as const;
 
