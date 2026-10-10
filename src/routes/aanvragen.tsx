@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
-import { PRODUCTS, TERMS, CONTACT, STRIPE, ROOF_TYPES, ROOF_DIRS, SHADES, METERS, type Product, type Term, type RoofType, type RoofDir, type Shade, type Meter, runScan, kwh } from "@/lib/matchdesk";
+import { PRODUCTS, TERMS, CONTACT, ROOF_TYPES, ROOF_DIRS, SHADES, METERS, type Product, type Term, type RoofType, type RoofDir, type Shade, type Meter, runScan, kwh } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/cn";
@@ -25,6 +25,7 @@ function Aanvragen() {
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
   const [doneId, setDoneId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (search.product && (PRODUCTS as readonly string[]).includes(search.product)) {
@@ -35,8 +36,9 @@ function Aanvragen() {
   const lead = useMatchdesk((s) => s.leads.find((l) => l.id === doneId));
   const { user } = useCurrentUserState();
 
-  function next(e: FormEvent) {
+  async function next(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError("");
     if (step === 0 && !draft.product) return setError("Kies een installatie.");
     if (step === 1) {
@@ -51,8 +53,15 @@ function Aanvragen() {
         return setError("Vul naam, e-mail en telefoon in.");
       }
       if (!draft.consent) return setError("Bevestig dat we je antwoorden mogen opslaan.");
-      const created = submitLead();
-      setDoneId(created.id);
+      setBusy(true);
+      try {
+        const created = await submitLead();
+        setDoneId(created.id);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Opslaan is niet bevestigd. Probeer opnieuw; je antwoorden blijven bewaard.");
+      } finally {
+        setBusy(false);
+      }
       return;
     }
     setStep((s) => s + 1);
@@ -73,7 +82,7 @@ function Aanvragen() {
               <p className="mt-3 text-muted">
                 {user
                   ? "Je kunt deze aanvraag nu volgen in je klantportaal: status, match en afspraak."
-                  : "Er is nog geen klantportaal. Dat ontstaat pas als je een account maakt. Zonder account kunnen we je aanvraag niet tonen of een afspraak plannen."}
+                  : "Maak een account met het e-mailadres van deze aanvraag om je project te volgen. Een gesprek spreek je persoonlijk met Matchdesk af."}
               </p>
               <div className="mt-6 rounded-md border border-line bg-paper p-4 text-sm">
                 <strong>{lead.product}</strong>
@@ -85,30 +94,16 @@ function Aanvragen() {
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <Stat label="Regio" value={scan.region} />
                 <Stat label="Inschatting" value={scan.suitability} />
-                <Stat label={lead.product === "Thuisbatterij" ? "Batterij" : "Opwek"} value={lead.product === "Thuisbatterij" ? `${scan.batteryKwh} kWh` : kwh(scan.yieldKwh)} />
+                <Stat label={lead.product === "Thuisbatterij" ? "Batterij" : "Opwek"} value={lead.product === "Thuisbatterij" ? (scan.batteryKwh == null ? "Nog te bepalen" : `${scan.batteryKwh} kWh`) : kwh(scan.yieldKwh)} />
               </div>
               <p className="mt-4 text-sm text-muted">{scan.matchHint}</p>
               <div className="mt-8 rounded-lg border border-line p-6">
-                <span className="inline-flex rounded-full bg-mint/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-teal">
-                  Upgrade · €39
-                </span>
-                <h3 className="mt-3 font-display text-2xl">Beter voorbereid? Bekijk het uitgebreide woningrapport (€39)</h3>
-                <ul className="mt-4 space-y-2 text-sm">
-                  <li className="flex gap-2"><Check className="size-4 text-teal" /> Fit-rapport mee naar jouw ene installateur</li>
-                  <li className="flex gap-2"><Check className="size-4 text-teal" /> Scherpere eerste offerte</li>
-                  <li className="flex gap-2"><Check className="size-4 text-teal" /> Oriëntatie — geen installatiegarantie</li>
-                </ul>
+                <span className="inline-flex rounded-full bg-mint/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-teal">Bestaande aankopen</span>
+                <h3 className="mt-3 font-display text-2xl">Hulp bij je eerder gekochte woningrapport</h3>
+                <p className="mt-3 text-sm text-muted">Nieuwe verkoop is gepauzeerd. Je gratis intake en matchaanvraag blijven beschikbaar. Heb je al een rapport gekocht? We helpen je met toegang en de afgesproken levering; betaal niet opnieuw.</p>
                 <Button asChild variant="mint" className="mt-5">
-                  <a href={STRIPE.woningscan}>
-                    Betaal €39 en open het rapport <ArrowRight className="size-4" />
-                  </a>
+                  <Link to="/rapport">Toegang en ondersteuning <ArrowRight className="size-4" /></Link>
                 </Button>
-                <p className="mt-3 text-xs text-muted">
-                  Na betaling kom je terug op je rapport. Al betaald?{" "}
-                  <Link to="/rapport" search={{ paid: "1" }} className="font-semibold text-teal">
-                    Open het woningrapport
-                  </Link>
-                </p>
               </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 {user ? (
@@ -280,7 +275,7 @@ function Aanvragen() {
                     </label>
                   </div>
                   <p className="text-xs text-muted">
-                    <strong>Gratis:</strong> basisresultaat en match. Deze dakgegevens gaan mee in het optionele Fit-rapport voor de installateur.
+                    <strong>Gratis:</strong> intake en matchaanvraag. Deze antwoorden helpen de installateur het gesprek over je woning voorbereiden.
                   </p>
                 </>
               ) : null}
@@ -319,20 +314,20 @@ function Aanvragen() {
                     <input type="checkbox" className="mt-1 accent-teal" checked={draft.consent} onChange={(e) => setDraft({ consent: e.target.checked })} />
                     Ik ga akkoord met het opslaan van mijn antwoorden voor deze scan en een eventuele match die ik zelf aanvraag.
                   </label>
-                  <p className="text-xs text-muted">De basisanalyse en installateursmatch zijn gratis. Het uitgebreide rapport van €39 is optioneel.</p>
+                  <p className="text-xs text-muted">De intake en matchaanvraag zijn gratis. Nieuwe verkoop van het betaalde rapport is gepauzeerd; bestaande aankopen blijven gelden.</p>
                 </>
               ) : null}
               {error ? <p className="text-sm font-medium text-red-700" role="alert">{error}</p> : null}
               <div className="flex items-center justify-between pt-2">
                 {step ? (
-                  <Button type="button" variant="ghost" onClick={() => setStep((s) => s - 1)}>
+                  <Button type="button" variant="ghost" disabled={busy} onClick={() => setStep((s) => s - 1)}>
                     Terug
                   </Button>
                 ) : (
                   <span />
                 )}
-                <Button type="submit">
-                  {step === 3 ? "Aanvraag opslaan" : "Volgende"} <ArrowRight className="size-4" />
+                <Button type="submit" disabled={busy}>
+                  {busy ? "Opslaan…" : step === 3 ? "Aanvraag opslaan" : "Volgende"} <ArrowRight className="size-4" />
                 </Button>
               </div>
               <p className="text-xs text-muted">Je antwoorden blijven tijdens deze sessie in dit tabblad bewaard.</p>

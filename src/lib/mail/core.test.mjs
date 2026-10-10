@@ -1,6 +1,5 @@
 // @ts-nocheck
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   decideActivate,
@@ -20,6 +19,7 @@ import {
   listMailActivity,
   appendOutbox,
   recordOutbox,
+  COMMISSION_TEXT,
 } from "./core.mjs";
 
 const ORIGIN = "https://www.getmatchdesk.nl";
@@ -57,16 +57,16 @@ function lead(patch = {}) {
   };
 }
 
-test("activatiemail volgt het branded voorbeeld", () => {
+test("activatiemail houdt branding en vermeldt nieuwe contractvoorwaarden zonder oude prijsbelofte", () => {
   const mail = renderActivationEmail({
     greeting: "Pieter",
     company: "RD Solar Group",
     activationUrl: DEMO_URL,
   });
-  const html = readFileSync(new URL("../../../ops/mail/activatie-registratie.html", import.meta.url), "utf8");
-  const text = readFileSync(new URL("../../../ops/mail/activatie-registratie.txt", import.meta.url), "utf8");
-  assert.equal(mail.html, html.trimEnd());
-  assert.equal(mail.text, text);
+  assert.ok(mail.text.includes(COMMISSION_TEXT));
+  assert.match(mail.text, /oplevering én ontvangen klantbetaling/);
+  assert.match(mail.text, /Bestaande afspraken/);
+  assert.doesNotMatch(`${mail.html}\n${mail.text}`, /10%|€400|€600|Eerste gewonnen klus €0/);
   assert.match(mail.html, /bgcolor="#0D9488"/);
   assert.match(mail.html, />M</);
   assert.match(mail.html, /Activeer account/);
@@ -74,6 +74,18 @@ test("activatiemail volgt het branded voorbeeld", () => {
   assert.match(mail.html, /info@getmatchdesk\.nl/);
   assert.doesNotMatch(`${mail.html}\n${mail.text}`, /kennismaking/i);
   assert.equal(mail.subject, "Activeer je Matchdesk-account");
+});
+
+test("bevestiging en klusmail verwijzen naar hetzelfde nieuwe model en bewaren historische afspraken", () => {
+  const mails = [
+    renderConfirmationEmail({ greeting: "Pieter", company: "RD Solar", portalUrl: `${ORIGIN}/bedrijf` }),
+    renderJobEmail({ greeting: "Pieter", company: "RD Solar", lead: lead(), portalUrl: `${ORIGIN}/bedrijf` }),
+  ];
+  for (const mail of mails) {
+    assert.ok(mail.text.includes(COMMISSION_TEXT));
+    assert.match(mail.text, /exclusief btw/);
+    assert.doesNotMatch(mail.text, /10%|€400|€600/);
+  }
 });
 
 test("bedrijfsnaam wordt ge-escaped", () => {
@@ -253,7 +265,8 @@ test("klusmail alleen bij nieuwe toewijzing aan een actief bedrijf", () => {
   });
   assert.equal(first.emails.length, 1);
   assert.match(first.emails[0].mail.html, /één lead, één installateur/i);
-  assert.match(first.emails[0].mail.text, /€0/);
+  assert.match(first.emails[0].mail.text, /€175/);
+  assert.match(first.emails[0].mail.text, /oplevering én ontvangen klantbetaling/);
   const sent = markJobsSent(first.ledger, [first.emails[0].key], NOW);
   const repeat = planJobMails({
     beforeLeads: [lead({ partnerId: "P-RD", status: "Gematcht" })],

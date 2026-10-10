@@ -16,7 +16,7 @@ function Voorwaarden() {
   return (
     <main className="bg-paper py-16 text-ink">
       <Wrap className="max-w-3xl">
-        <PageIntro kicker="Voorwaarden · 20 september 2026" title="Voorwaarden voor huiseigenaren">
+        <PageIntro kicker="Voorwaarden · 8 oktober 2026" title="Voorwaarden voor huiseigenaren">
           Wat je van Matchdesk mag verwachten als bemiddelingsplatform.
         </PageIntro>
         <article className="space-y-6 text-sm leading-7 text-muted [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:text-ink">
@@ -34,11 +34,11 @@ function Voorwaarden() {
           </p>
           <h2>4. Kosten</h2>
           <p>
-            De basisscan en matchaanvraag zijn gratis. Het uitgebreide woningrapport kost optioneel €39 eenmalig. Je kiest dit apart en ziet het totaal vóór betaling. Wij ontvangen volgens de samenwerking commissie van de installateur als een opdracht tot stand komt.
+            De intake en matchaanvraag zijn gratis. Nieuwe verkoop van het betaalde woningrapport is gepauzeerd. Bestaande aankopen en leveringsafspraken blijven gelden. Voor nieuwe schriftelijke partnerafspraken ontvangt Matchdesk een vaste succesfee van de installateur na oplevering én ontvangen klantbetaling.
           </p>
           <h2>5. Het uitgebreide woningrapport</h2>
           <p>
-            Na bevestigde betaling open je het rapport bij jouw dossier. Het bevat persoonlijke aandachtspunten, scenario's met zichtbare aannames, een checklist en offertevragen. Het is geen schouwing, technisch ontwerp, financieel advies of opbrengstgarantie. Met hetzelfde geverifieerde e-mailadres kun je jouw dossier op een ander apparaat openen.
+            Voor bestaande aankopen leveren we het rapport volgens de gemaakte afspraak, gekoppeld aan het juiste dossier. Toegang vraagt gecontroleerde betaling en identiteit; een terugkeerlink of browserinstelling is geen betalingsbewijs. Het rapport is geen schouwing, technisch ontwerp, financieel advies of opbrengstgarantie.
           </p>
           <p>
             Werkt de toegang of levering niet? Neem contact op via{" "}

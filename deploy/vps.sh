@@ -1,196 +1,103 @@
 #!/usr/bin/env bash
-# Matchdesk — één commando op de VPS:
-#   curl -fsSL https://raw.githubusercontent.com/koenferdi/getmatchdesk/main/deploy/vps.sh | sudo bash
 set -euo pipefail
 
-REPO="${MATCHDESK_REPO:-https://github.com/koenferdi/getmatchdesk.git}"
-BRANCH="${MATCHDESK_BRANCH:-main}"
-APP_DIR="${MATCHDESK_DIR:-/opt/matchdesk}"
-DOMAIN_WWW="${MATCHDESK_WWW:-www.getmatchdesk.nl}"
-DOMAIN_APEX="${MATCHDESK_APEX:-getmatchdesk.nl}"
-PORT=3000
+# Read-only preflight. The former installer could erase an existing app, data,
+# environment and unrelated Nginx sites before discovering incomplete source.
+# A production deploy needs the actual VPS layout and the validation below.
+usage() {
+  cat >&2 <<'MESSAGE'
+STOP: dit script installeert of publiceert niet. Er is niets aangepast.
+Gebruik: bash deploy/vps.sh --check /pad/naar/volledige-releasebron COMMIT_SHA
+COMMIT_SHA moet de volledige, vastgelegde Git-commit zijn (40 hextekens).
+Zie docs/RELEASE_VALIDATION.md voor backup, staging, controles en rollback.
+MESSAGE
+}
 
-if [[ "$(id -u)" -ne 0 ]]; then
-  echo "Run dit commando als root (sudo)."
+if [[ "$#" -ne 3 || "$1" != '--check' ]]; then
+  usage
+  exit 2
+fi
+
+SOURCE_DIR="$2"
+EXPECTED_COMMIT="$3"
+if [[ ! "$EXPECTED_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]; then
+  echo 'STOP: geef een volledige Git-commit op, geen main of branchnaam.' >&2
+  exit 1
+fi
+if [[ ! -d "$SOURCE_DIR" || -L "$SOURCE_DIR" ]]; then
+  echo 'STOP: de releasebron moet een bestaande, afzonderlijke directory zijn.' >&2
   exit 1
 fi
 
-export DEBIAN_FRONTEND=noninteractive
-echo "==> Pakketten"
-apt-get update -qq
-apt-get install -y -qq git nginx ca-certificates curl openssl rsync >/dev/null
-
-if ! command -v node >/dev/null 2>&1 || ! node -v | grep -qE 'v(2[0-9]|1[8-9])'; then
-  echo "==> Node.js 22"
-  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-  apt-get install -y -qq nodejs >/dev/null
-fi
-
-SELF_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." 2>/dev/null && pwd || true)"
-if [[ -n "${SELF_ROOT}" && -f "${SELF_ROOT}/package.json" && -f "${SELF_ROOT}/deploy/vps.sh" ]]; then
-  echo "==> Lokale bron"
-  mkdir -p "$APP_DIR"
-  if [[ "$(readlink -f "$SELF_ROOT")" != "$(readlink -f "$APP_DIR")" ]]; then
-    rsync -a --delete --exclude node_modules --exclude .git --exclude .output "$SELF_ROOT"/ "$APP_DIR"/
+# Minimum source set for the layout imported by this repository. Passing this
+# check is not proof that every import, migration or production flow is valid.
+required_files=(
+  package.json
+  package-lock.json
+  vite.config.ts
+  deploy/matchdesk.service
+  src/lib/auth/server.ts
+  src/lib/auth/email-password.ts
+  src/lib/auth/gate-session.server.ts
+  src/lib/auth/pglite-dialect.ts
+  src/lib/auth/preview.ts
+  scripts/sign-out-plan.mjs
+  migrations/auth/0001_auth.sql
+)
+missing=0
+for file in "${required_files[@]}"; do
+  if [[ ! -f "$SOURCE_DIR/$file" || -L "$SOURCE_DIR/$file" ]]; then
+    printf 'Ontbrekende of gekoppelde bron: %s\n' "$file" >&2
+    missing=1
   fi
-elif [[ -d "$APP_DIR/.git" ]]; then
-  git -C "$APP_DIR" fetch --depth 1 origin "$BRANCH"
-  git -C "$APP_DIR" checkout -B "$BRANCH"
-  git -C "$APP_DIR" reset --hard "origin/$BRANCH"
-else
-  echo "==> Broncode"
-  rm -rf "$APP_DIR"
-  git clone --depth 1 --branch "$BRANCH" "$REPO" "$APP_DIR"
-fi
-
-echo "==> Geheimen"
-install -d -m 700 /var/lib/matchdesk/pglite
-if [[ ! -f /etc/matchdesk.env ]]; then
-  cat >/etc/matchdesk.env <<EOF
-NODE_ENV=production
-MATCHDESK_VPS=1
-VITE_AUTH_ENABLED=true
-VITE_NATIVE_GOOGLE=true
-BETTER_AUTH_URL=https://${DOMAIN_WWW}
-BETTER_AUTH_SECRET=$(openssl rand -hex 32)
-PGLITE_DATA_DIR=/var/lib/matchdesk/pglite
-PORT=${PORT}
-HOST=127.0.0.1
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-FROM_EMAIL=info@getmatchdesk.nl
-RESEND_API_KEY=
-MATCHDESK_PUBLIC_URL=https://${DOMAIN_WWW}
-EOF
-  chmod 600 /etc/matchdesk.env
-else
-  grep -q MATCHDESK_VPS /etc/matchdesk.env || echo "MATCHDESK_VPS=1" >> /etc/matchdesk.env
-  grep -q VITE_NATIVE_GOOGLE /etc/matchdesk.env || echo "VITE_NATIVE_GOOGLE=true" >> /etc/matchdesk.env
-  grep -q '^FROM_EMAIL=' /etc/matchdesk.env || echo 'FROM_EMAIL=info@getmatchdesk.nl' >> /etc/matchdesk.env
-  grep -q '^RESEND_API_KEY=' /etc/matchdesk.env || echo 'RESEND_API_KEY=' >> /etc/matchdesk.env
-  grep -q '^MATCHDESK_PUBLIC_URL=' /etc/matchdesk.env || echo "MATCHDESK_PUBLIC_URL=https://${DOMAIN_WWW}" >> /etc/matchdesk.env
-fi
-
-echo "==> Bouwen"
-cd "$APP_DIR"
-export MATCHDESK_VPS=1
-export VITE_AUTH_ENABLED=true
-export VITE_NATIVE_GOOGLE=true
-if [[ -f package-lock.json ]]; then
-  npm ci --omit=optional || npm install
-else
-  npm install
-fi
-NODE_OPTIONS=--max-old-space-size=1536 MATCHDESK_VPS=1 npm run build
-
-echo "==> Rechten"
-id www-data >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin www-data
-chown -R www-data:www-data "$APP_DIR" /var/lib/matchdesk
-chmod -R u+rwX "$APP_DIR" /var/lib/matchdesk
-
-echo "==> Dienst"
-cp "$APP_DIR/deploy/matchdesk.service" /etc/systemd/system/matchdesk.service
-systemctl daemon-reload
-systemctl enable matchdesk
-systemctl restart matchdesk
-
-echo "==> Nginx"
-SSL_DIR="/etc/letsencrypt/live/${DOMAIN_WWW}"
-[[ -d "$SSL_DIR" ]] || SSL_DIR="/etc/letsencrypt/live/${DOMAIN_APEX}"
-if [[ -d /etc/nginx/sites-enabled ]]; then
-  mkdir -p /root/matchdesk-nginx-backup
-  cp -a /etc/nginx/sites-enabled /root/matchdesk-nginx-backup/"$(date +%s)" || true
-fi
-
-if [[ -f "$SSL_DIR/fullchain.pem" ]]; then
-  cat >/etc/nginx/sites-available/matchdesk <<NGX
-server {
-  listen 80;
-  listen [::]:80;
-  server_name ${DOMAIN_APEX} ${DOMAIN_WWW};
-  return 301 https://${DOMAIN_WWW}\$request_uri;
-}
-server {
-  listen 443 ssl http2;
-  listen [::]:443 ssl http2;
-  server_name ${DOMAIN_APEX};
-  ssl_certificate ${SSL_DIR}/fullchain.pem;
-  ssl_certificate_key ${SSL_DIR}/privkey.pem;
-  return 301 https://${DOMAIN_WWW}\$request_uri;
-}
-server {
-  listen 443 ssl http2;
-  listen [::]:443 ssl http2;
-  server_name ${DOMAIN_WWW};
-  ssl_certificate ${SSL_DIR}/fullchain.pem;
-  ssl_certificate_key ${SSL_DIR}/privkey.pem;
-  client_max_body_size 12m;
-  location / {
-    proxy_pass http://127.0.0.1:${PORT};
-    proxy_http_version 1.1;
-    proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-    proxy_set_header Upgrade \$http_upgrade;
-    proxy_set_header Connection "upgrade";
-  }
-}
-NGX
-else
-  cat >/etc/nginx/sites-available/matchdesk <<NGX
-server {
-  listen 80;
-  listen [::]:80;
-  server_name ${DOMAIN_APEX};
-  return 301 http://${DOMAIN_WWW}\$request_uri;
-}
-server {
-  listen 80;
-  listen [::]:80;
-  server_name ${DOMAIN_WWW};
-  client_max_body_size 12m;
-  location / {
-    proxy_pass http://127.0.0.1:${PORT};
-    proxy_http_version 1.1;
-    proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-  }
-}
-NGX
-fi
-
-ln -sfn /etc/nginx/sites-available/matchdesk /etc/nginx/sites-enabled/matchdesk
-rm -f /etc/nginx/sites-enabled/default
-# oude vhosts (conf.d + extra sites) mogen HTTPS niet meer vangen
-mkdir -p /root/nginx-old
-for f in /etc/nginx/sites-enabled/*; do
-  b=$(basename "$f")
-  [[ "$b" == matchdesk ]] && continue
-  mv "$f" /root/nginx-old/ 2>/dev/null || rm -f "$f"
 done
-if [[ -d /etc/nginx/conf.d ]]; then
-  for f in /etc/nginx/conf.d/*.conf; do
-    [[ -e "$f" ]] || continue
-    mv "$f" /root/nginx-old/ 2>/dev/null || true
-  done
+if [[ ! -f "$SOURCE_DIR/src/lib/db.ts" && ! -f "$SOURCE_DIR/src/lib/db/index.ts" ]]; then
+  echo 'Ontbrekende bron: src/lib/db.ts of src/lib/db/index.ts' >&2
+  missing=1
 fi
-nginx -t
-systemctl reload nginx
+if [[ ! -f "$SOURCE_DIR/src/lib/auth/use-current-user.ts" && ! -f "$SOURCE_DIR/src/lib/auth/use-current-user.tsx" ]]; then
+  echo 'Ontbrekende bron: src/lib/auth/use-current-user.ts(x)' >&2
+  missing=1
+fi
+if [[ "$missing" -ne 0 ]]; then
+  echo 'STOP: onvolledige releasebron. De live app, data, env en Nginx zijn niet aangeraakt.' >&2
+  exit 1
+fi
 
-echo "==> Wachten tot Matchdesk antwoordt"
-for i in $(seq 1 45); do
-  if curl -sf -o /dev/null --max-time 2 "http://127.0.0.1:${PORT}/"; then
-    echo ""
-    echo "Klaar. Site: https://${DOMAIN_WWW}"
-    echo "Klanten en bedrijven: e-mail + wachtwoord of Google."
-    exit 0
-  fi
-  sleep 1
-done
+command -v git >/dev/null 2>&1 || { echo 'STOP: Git ontbreekt; installeer hier niets automatisch.' >&2; exit 1; }
+command -v node >/dev/null 2>&1 || { echo 'STOP: Node ontbreekt; installeer hier niets automatisch.' >&2; exit 1; }
+SOURCE_ROOT="$(cd "$SOURCE_DIR" && pwd -P)"
+GIT_ROOT="$(git -C "$SOURCE_ROOT" rev-parse --show-toplevel)" || { echo 'STOP: de releasebron is geen Git-checkout.' >&2; exit 1; }
+if [[ "$SOURCE_ROOT" != "$GIT_ROOT" ]]; then
+  echo 'STOP: de bron moet de root van de release-checkout zijn.' >&2
+  exit 1
+fi
+ACTUAL_COMMIT="$(git -C "$SOURCE_ROOT" rev-parse HEAD)"
+if [[ "${ACTUAL_COMMIT,,}" != "${EXPECTED_COMMIT,,}" ]]; then
+  echo 'STOP: HEAD wijkt af van de vastgelegde releasecommit.' >&2
+  exit 1
+fi
+# Optional Git index refresh is disabled: this preflight must remain read-only.
+if [[ -n "$(GIT_OPTIONAL_LOCKS=0 git -C "$SOURCE_ROOT" status --porcelain --untracked-files=all)" ]]; then
+  echo 'STOP: de release-checkout heeft lokale wijzigingen of ongevolgde bestanden; bewaar en beoordeel die eerst.' >&2
+  exit 1
+fi
+node - "$SOURCE_ROOT/package.json" "$SOURCE_ROOT/package-lock.json" <<'NODE'
+const fs = require('node:fs');
+try {
+  const pkg = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+  const lock = JSON.parse(fs.readFileSync(process.argv[3], 'utf8'));
+  if (typeof pkg.scripts?.build !== 'string' || !pkg.scripts.build.trim()) {
+    throw new Error('package.json mist een buildscript');
+  }
+  if (!Number.isInteger(lock.lockfileVersion) || lock.lockfileVersion < 1) {
+    throw new Error('package-lock.json heeft geen geldig lockfileVersion');
+  }
+} catch (error) {
+  console.error(`STOP: ongeldig bronmanifest: ${error.message}`);
+  process.exit(1);
+}
+NODE
 
-echo "Dienst startte niet. Logs:"
-journalctl -u matchdesk -n 50 --no-pager || true
-exit 1
+printf 'Minimale broncontrole geslaagd voor commit %s.\n' "$ACTUAL_COMMIT"
+echo 'Er is niet gebouwd of gedeployd. Productiebron, stagingtests en rollback blijven verplicht.'

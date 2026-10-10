@@ -221,7 +221,10 @@ export const auth = betterAuth({
   session: { cookieCache: { enabled: true, maxAge: 300 } },
 
   // Local email/password — toggled only via `./email-password` (not a plugin).
-  ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
+  // New password accounts cannot enter a verified workspace until the complete
+  // production source includes a tested verification-mail flow. Existing sign-in
+  // remains available; API access still requires a verified server identity.
+  ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true, disableSignUp: true } } : {}),
 
   ...(googleClientId && googleClientSecret
     ? {

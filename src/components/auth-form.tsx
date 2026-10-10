@@ -45,7 +45,6 @@ export function AuthForm({
   mode,
   next,
   email: emailPrefill = "",
-  name: namePrefill = "",
   onRoleChange,
   onModeChange,
 }: {
@@ -60,7 +59,6 @@ export function AuthForm({
   const navigate = useNavigate();
   const copy = ROLE_COPY[role];
   const dest = next || copy.next;
-  const [name, setName] = useState(namePrefill);
   const [email, setEmail] = useState(emailPrefill);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -69,22 +67,14 @@ export function AuthForm({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (mode === "aanmelden") return setError("Account maken met e-mail is tijdelijk niet beschikbaar. Gebruik de getoonde inlogprovider of neem contact op met Matchdesk.");
     if (!email.includes("@")) return setError("Vul een geldig e-mailadres in.");
     if (password.length < 8) return setError("Kies een wachtwoord van minstens 8 tekens.");
     setBusy(true);
     rememberRole(role);
     try {
-      if (mode === "aanmelden") {
-        const { error: err } = await authClient.signUp.email({
-          email,
-          password,
-          name: name.trim() || (role === "bedrijf" ? "Bedrijf" : "Klant"),
-        });
-        if (err) throw new Error(err.message || "Aanmelden lukte niet.");
-      } else {
-        const { error: err } = await authClient.signIn.email({ email, password });
-        if (err) throw new Error(err.message || "Inloggen lukte niet. Controleer e-mail en wachtwoord.");
-      }
+      const { error: err } = await authClient.signIn.email({ email, password });
+      if (err) throw new Error(err.message || "Inloggen lukte niet. Controleer e-mail en wachtwoord.");
       await authClient.getSession();
       if (isOwnerEmail(email)) await navigate({ to: "/beheer" });
       else if (dest === "/bedrijf") await navigate({ to: "/bedrijf" });
@@ -149,19 +139,12 @@ export function AuthForm({
         </div>
       ) : null}
 
-      <p className="text-center text-xs text-muted">of met e-mail</p>
-
+      {mode === "aanmelden" ? (
+        <p className="text-sm text-muted">Account maken met e-mail is tijdelijk niet beschikbaar. Gebruik de getoonde inlogprovider of neem contact op met Matchdesk.</p>
+      ) : (
+      <>
+      <p className="text-center text-xs text-muted">of met e-mail voor een bestaand account</p>
       <form onSubmit={onSubmit} className="space-y-3">
-        {mode === "aanmelden" ? (
-          <input
-            className="field-input"
-            autoComplete="name"
-            placeholder={role === "bedrijf" ? "Bedrijfsnaam" : "Je naam"}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        ) : null}
         <input
           className="field-input"
           type="email"
@@ -174,7 +157,7 @@ export function AuthForm({
         <input
           className="field-input"
           type="password"
-          autoComplete={mode === "aanmelden" ? "new-password" : "current-password"}
+          autoComplete="current-password"
           placeholder="Wachtwoord (min. 8 tekens)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -183,9 +166,11 @@ export function AuthForm({
         />
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
         <Button type="submit" className="w-full" disabled={busy}>
-          {busy ? "Even geduld…" : mode === "aanmelden" ? "Account maken" : "Inloggen"}
+          {busy ? "Even geduld…" : "Inloggen"}
         </Button>
       </form>
+      </>
+      )}
 
       <p className="text-sm text-muted">
         {mode === "aanmelden" ? (

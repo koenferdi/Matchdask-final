@@ -1,6 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
-import { type AdminNote, type Lead, type Partner, type Subscriber } from "@/lib/matchdesk";
+import type { AdminNote, Lead, Partner, Subscriber } from "@/lib/matchdesk";
+import { readJsonFile, writeJsonAtomic } from "./json-file.mjs";
 
 export type WorkspaceFile = {
   leads: Lead[];
@@ -37,9 +36,10 @@ function clean(ws: WorkspaceFile): WorkspaceFile {
 }
 
 export function readWorkspaceFile(): WorkspaceFile {
-  try {
-    const raw = readFileSync(FILE, "utf8");
-    const parsed = JSON.parse(raw) as WorkspaceFile;
+    const parsed = readJsonFile(FILE, empty()) as WorkspaceFile;
+    for (const key of ["leads", "partners", "subscribers", "notes"] as const) {
+      if (parsed[key] != null && !Array.isArray(parsed[key])) throw new Error(`Invalid workspace field: ${key}`);
+    }
     return clean({
       leads: Array.isArray(parsed.leads) ? parsed.leads : [],
       partners: Array.isArray(parsed.partners) ? parsed.partners : [],
@@ -51,14 +51,10 @@ export function readWorkspaceFile(): WorkspaceFile {
       siteNotice: parsed.siteNotice ?? "",
       matchingPaused: Boolean(parsed.matchingPaused),
     });
-  } catch {
-    return empty();
-  }
 }
 
 export function writeWorkspaceFile(ws: WorkspaceFile) {
-  mkdirSync(dirname(FILE), { recursive: true });
-  writeFileSync(FILE, JSON.stringify(clean(ws), null, 2));
+  writeJsonAtomic(FILE, clean(ws));
 }
 
 /** Public signup may only create a review row. Status and activation are server-owned. */
@@ -80,14 +76,16 @@ export function asSignupPartner(partner: Partner): Partner {
 export function publicPartners(partners: Partner[]): Partner[] {
   return realPartners(partners)
     .filter((p) => p.status === "Actief")
-    .map((p) => {
-      const copy: Partner = {
-        ...p,
-        email: "",
-        contactName: undefined,
-        kvk: p.kvk ? `${p.kvk.slice(0, 4)}****` : "",
-      };
-      delete copy.activatedAt;
-      return copy;
-    });
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      email: "",
+      kvk: p.kvk ? `${p.kvk.slice(0, 4)}****` : "",
+      products: p.products,
+      prefixes: p.prefixes,
+      capacity: p.capacity,
+      status: p.status,
+      quality: p.quality,
+      exclusivePaid: Boolean(p.exclusivePaid),
+    }));
 }

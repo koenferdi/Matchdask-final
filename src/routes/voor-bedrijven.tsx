@@ -16,7 +16,7 @@ function BedrijvenPage() {
           <h1 className="mt-4 font-display text-[clamp(2.4rem,5vw,4.4rem)] leading-[1.05]">
             Aanmelden kost niets.
             <br />
-            Betalen hoeft niet.
+            Matching heeft een vaste succesfee.
           </h1>
           <p className="mt-5 max-w-xl text-lg text-mint/80">
             Je meldt je bedrijf aan. Matchdesk beoordeelt. Bij toelating krijg je 1:1-aanvragen in jouw postcodes — geen
@@ -40,7 +40,7 @@ function BedrijvenPage() {
         <Wrap className="grid gap-6 md:grid-cols-3">
           <Card n="1" t="Aanmelden, gratis" d="KvK, vak, werkgebied. Geen betaalmuur." />
           <Card n="2" t="Beoordeling" d="Matchdesk laat toe — of vraagt iets na. Nooit automatisch live." />
-          <Card n="3" t="Aanvragen" d="Bij Actief: 1:1-matches in jouw prefixen. Commissie pas als de klus doorgaat." />
+          <Card n="3" t="Aanvragen" d="Bij Actief: 1:1-matches in jouw prefixen. Nieuwe vaste fees pas na oplevering én ontvangen klantbetaling." />
         </Wrap>
       </section>
       <section className="py-16">
@@ -60,17 +60,16 @@ function BedrijvenPage() {
       <section className="border-t border-white/8 py-16">
         <Wrap className="max-w-2xl">
           <p className="text-[12px] font-semibold tracking-[0.14em] text-mint">OPTIONEEL</p>
-          <h2 className="mt-3 font-display text-3xl">Publieke badge — als je wilt</h2>
+          <h2 className="mt-3 font-display text-3xl">Bestaande aanvragen beter opvolgen</h2>
           <p className="mt-3 text-mint/75">
-            Geen voorwaarde om lid te worden. Alleen als je herkenbaar wilt zijn op de lijst. Geen inschrijfgeld, geen
-            automatische plaatsing.
+            De Opvolgdesk-pilot helpt met maximaal tien geschikte aanvragen uit je eigen bestand. Veertien dagen, maximaal twee contactpogingen per dossier en vier uitvoeringsuren totaal. Introductietestprijs €149 exclusief btw; persoonlijk af te spreken, zonder omzetgarantie.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild variant="onDark">
-              <Link to="/voorbeeld-badge">Wat de badge is</Link>
+              <Link to="/opvolgdesk">Bekijk de Opvolgdesk-pilot</Link>
             </Button>
             <Button asChild variant="onDark">
-              <Link to="/exclusief">Meer over de keuring</Link>
+              <Link to="/voorwaarden-installateurs">Scope en voorwaarden</Link>
             </Button>
           </div>
         </Wrap>

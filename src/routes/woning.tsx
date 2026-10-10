@@ -45,7 +45,7 @@ function WoningPage() {
         <Wrap className="max-w-2xl">
           <h2 className="font-display text-3xl">Wat je verder kunt doen</h2>
           <ul className="mt-6 space-y-3 text-sm text-mint/80">
-            <Li to="/rapport">Fit-rapport €39 — dossier voor de schouwing</Li>
+            <Li to="/rapport">Bestaand woningrapport — toegang en ondersteuning</Li>
             <Li to="/tools">Rekenhulp opwek en batterij</Li>
             <Li to="/wachtlijst">Gratis woningscan / wachtlijst</Li>
             <Li to="/login">Account maken om je project te volgen</Li>

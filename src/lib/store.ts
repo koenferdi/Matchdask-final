@@ -7,7 +7,6 @@ import {
   loadWorkspace,
   saveWorkspace,
   newId,
-  findPartnerFor,
   type Subscriber,
   type AdminNote,
   type RoofType,
@@ -68,18 +67,20 @@ type Store = {
   matchingPaused: boolean;
   serverOwner: boolean | null;
   remoteReady: boolean;
+  ownPartner: Partner | null;
+  remoteError: string;
   draft: Draft;
   hydrate: () => void;
   persist: () => void;
   setDraft: (patch: Partial<Draft>) => void;
   resetDraft: () => void;
-  submitLead: () => Lead;
+  submitLead: () => Promise<Lead>;
   patchLead: (id: string, patch: Partial<Lead>) => void;
-  requestMatch: (leadId: string) => void;
+  requestMatch: (leadId: string) => Promise<{ ok: boolean; message: string }>;
   bookAppointment: (leadId: string, date: string, time: string) => void;
   cancelAppointment: (leadId: string) => void;
   confirmAppointment: (leadId: string) => void;
-  submitPartner: (partner: Omit<Partner, "id" | "status" | "quality">) => Partner;
+  submitPartner: (partner: Omit<Partner, "id" | "status" | "quality">) => Promise<Partner>;
   setPartnerStatus: (id: string, status: Partner["status"]) => void;
   saveOwnAvailability: (patch: {
     id?: string;
@@ -120,7 +121,37 @@ function withOwnPartner(partners: Partner[], own?: Partner | null) {
 }
 
 function persistLocal(get: () => Store) {
-  saveWorkspace(workspaceSnapshot(get()));
+  try {
+    const state = get();
+    const snapshot = workspaceSnapshot(state);
+    saveWorkspace(state.serverOwner === true ? {
+      ...snapshot, leads: [], partners: [], subscribers: [], notes: [], activeLeadId: undefined,
+      reportPaid: false, exclusivePaid: false,
+    } : snapshot);
+  } catch {
+    // A browser cache failure must not prevent or contradict confirmed server storage.
+  }
+}
+
+async function persistIntake(kind: "leads" | "partners", record: Lead | Partner) {
+  let res: Response;
+  try {
+    res = await fetch("/api/workspace", {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intake: true, [kind]: [record] }),
+    });
+  } catch {
+    throw new Error("Je aanmelding is niet ontvangen door een verbindingsfout. Probeer het opnieuw.");
+  }
+  const data = await res.json().catch(() => ({})) as {
+    ok?: boolean; message?: string; createdLeadIds?: string[]; createdPartnerIds?: string[];
+  };
+  const receivedIds = kind === "leads" ? data.createdLeadIds : data.createdPartnerIds;
+  if (!res.ok || data.ok !== true || !Array.isArray(receivedIds) || !receivedIds.includes(record.id)) {
+    throw new Error(typeof data.message === "string" ? data.message : "Je aanmelding is niet bevestigd door de server. Probeer het opnieuw.");
+  }
 }
 
 function persistNow(get: () => Store, set: (patch: Partial<Store>) => void) {
@@ -140,6 +171,9 @@ function persistNow(get: () => Store, set: (patch: Partial<Store>) => void) {
   }
 }
 
+let hydrationGeneration = 0;
+let hydrationController: AbortController | null = null;
+
 export const useMatchdesk = create<Store>((set, get) => ({
   ready: false,
   leads: [],
@@ -152,12 +186,20 @@ export const useMatchdesk = create<Store>((set, get) => ({
   matchingPaused: false,
   serverOwner: null,
   remoteReady: false,
+  ownPartner: null,
+  remoteError: "",
   draft: emptyDraft(),
   hydrate: () => {
+    const generation = ++hydrationGeneration;
+    hydrationController?.abort();
+    hydrationController = null;
     const local = loadWorkspace();
     set({
       ready: true,
       remoteReady: typeof window === "undefined",
+      serverOwner: null,
+      ownPartner: null,
+      remoteError: "",
       leads: local.leads,
       partners: local.partners,
       subscribers: local.subscribers,
@@ -169,10 +211,18 @@ export const useMatchdesk = create<Store>((set, get) => ({
       matchingPaused: Boolean(local.matchingPaused),
     });
     if (typeof window === "undefined") return;
-    void fetch("/api/workspace", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { full?: boolean; workspace?: ReturnType<typeof loadWorkspace>; ownPartner?: Partner | null } | null) => {
-        if (!data?.workspace) return;
+    const controller = new AbortController();
+    hydrationController = controller;
+    const isCurrent = () => generation === hydrationGeneration && !controller.signal.aborted;
+    void fetch("/api/workspace", { credentials: "include", signal: controller.signal })
+      .then((r) => {
+        if (!isCurrent()) return null;
+        if (!r.ok) throw new Error("workspace-load");
+        return r.json();
+      })
+      .then((data: { full?: boolean; workspace?: ReturnType<typeof loadWorkspace>; ownPartner?: Partner | null; accessMessage?: string } | null) => {
+        if (!isCurrent()) return;
+        if (!data?.workspace || typeof data.full !== "boolean") throw new Error("workspace-load");
         const remote = data.workspace;
         if (data.full) {
           const partners = withOwnPartner(Array.isArray(remote.partners) ? remote.partners : [], data.ownPartner);
@@ -187,25 +237,40 @@ export const useMatchdesk = create<Store>((set, get) => ({
             siteNotice: remote.siteNotice ?? "",
             matchingPaused: Boolean(remote.matchingPaused),
             serverOwner: true,
+            ownPartner: data.ownPartner ?? null,
           });
           persistLocal(get);
           return;
         }
         set((s) => ({
           serverOwner: false,
+          leads: remote.leads ?? [],
+          activeLeadId: remote.leads?.some((lead) => lead.id === s.activeLeadId) ? s.activeLeadId : remote.leads?.[0]?.id,
+          reportPaid: false,
+          exclusivePaid: false,
           siteNotice: remote.siteNotice ?? s.siteNotice,
           matchingPaused: Boolean(remote.matchingPaused),
-          partners: withOwnPartner(s.partners.length ? s.partners : remote.partners ?? [], data.ownPartner),
+          partners: withOwnPartner(remote.partners ?? [], data.ownPartner),
+          subscribers: [],
+          notes: [],
+          ownPartner: data.ownPartner ?? null,
+          remoteError: typeof data.accessMessage === "string" ? data.accessMessage : "",
         }));
         persistLocal(get);
       })
-      .catch(() => {})
-      .finally(() => set({ remoteReady: true }));
+      .catch(() => {
+        if (isCurrent()) set({ ownPartner: null, remoteError: "Je bedrijfsgegevens konden niet van de server worden geladen. Probeer het opnieuw." });
+      })
+      .finally(() => {
+        if (!isCurrent()) return;
+        hydrationController = null;
+        set({ remoteReady: true });
+      });
   },
   persist: () => persistNow(get, set),
   setDraft: (patch) => set((s) => ({ draft: { ...s.draft, ...patch } })),
   resetDraft: () => set({ draft: emptyDraft() }),
-  submitLead: () => {
+  submitLead: async () => {
     const d = get().draft;
     const lead: Lead = {
       id: newId("MD"),
@@ -228,27 +293,36 @@ export const useMatchdesk = create<Store>((set, get) => ({
       hasSolar: d.hasSolar,
       note: d.note.trim() || undefined,
     };
+    await persistIntake("leads", lead);
     set((s) => ({ leads: [lead, ...s.leads], activeLeadId: lead.id }));
-    persistNow(get, set);
+    persistLocal(get);
     return lead;
   },
   patchLead: (id, patch) => {
     set((s) => ({ leads: s.leads.map((l) => (l.id === id ? { ...l, ...patch } : l)) }));
     persistNow(get, set);
   },
-  requestMatch: (leadId) => {
-    const { leads, partners } = get();
-    const lead = leads.find((l) => l.id === leadId);
-    if (!lead) return;
-    const partner = findPartnerFor(lead, partners);
-    set((s) => ({
-      leads: s.leads.map((l) =>
-        l.id === leadId
-          ? { ...l, status: partner ? "Gematcht" : "Nieuw", partnerId: partner?.id }
-          : l,
-      ),
-    }));
-    persistNow(get, set);
+  requestMatch: async (leadId) => {
+    try {
+      const response = await fetch("/api/workspace", {
+        method: "POST", credentials: "include", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ matchRequest: { id: leadId } }),
+      });
+      const data = await response.json().catch(() => ({})) as { ok?: boolean; message?: string; lead?: Lead; remainingCapacity?: number };
+      if (!response.ok || data.ok !== true || data.lead?.id !== leadId || !data.lead.partnerId) {
+        return { ok: false, message: typeof data.message === "string" ? data.message : "Toewijzing is niet bevestigd door de server." };
+      }
+      const saved = data.lead;
+      set((state) => ({
+        leads: state.leads.map((lead) => lead.id === saved.id ? saved : lead),
+        partners: state.partners.map((partner) => partner.id === saved.partnerId && typeof data.remainingCapacity === "number" ? { ...partner, capacity: data.remainingCapacity } : partner),
+        ownPartner: state.ownPartner?.id === saved.partnerId && typeof data.remainingCapacity === "number" ? { ...state.ownPartner, capacity: data.remainingCapacity } : state.ownPartner,
+      }));
+      persistLocal(get);
+      return { ok: true, message: typeof data.message === "string" ? data.message : "De toewijzing is opgeslagen." };
+    } catch {
+      return { ok: false, message: "Toewijzing is niet bevestigd door een verbindingsfout. Probeer opnieuw." };
+    }
   },
   bookAppointment: (leadId, date, time) => {
     set((s) => ({
@@ -280,15 +354,16 @@ export const useMatchdesk = create<Store>((set, get) => ({
     }));
     persistNow(get, set);
   },
-  submitPartner: (partner) => {
+  submitPartner: async (partner) => {
     const next: Partner = {
       ...partner,
       id: newId("P"),
       status: "Te beoordelen",
       quality: 0,
     };
+    await persistIntake("partners", next);
     set((s) => ({ partners: [next, ...s.partners] }));
-    persistNow(get, set);
+    persistLocal(get);
     return next;
   },
   setPartnerStatus: (id, status) => {
@@ -306,11 +381,11 @@ export const useMatchdesk = create<Store>((set, get) => ({
         body: JSON.stringify({ partnerSelfServe: patch }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string; partner?: Partner };
-      if (!res.ok || data.ok === false || !data.partner?.id) {
+      if (!res.ok || data.ok !== true || !data.partner?.id || (patch.id && data.partner.id !== patch.id)) {
         return { ok: false, message: typeof data.message === "string" ? data.message : "Opslaan lukte niet." };
       }
       const saved = data.partner;
-      set((s) => ({ partners: withOwnPartner(s.partners, saved) }));
+      set((s) => ({ partners: withOwnPartner(s.partners, saved), ownPartner: saved }));
       persistLocal(get);
       return { ok: true, message: data.message, partner: saved };
     } catch {

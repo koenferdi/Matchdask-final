@@ -145,7 +145,7 @@ function ActiverenPage() {
           {view.state === "klaar" ? (
             <div className="mt-6 space-y-4">
               <p className="text-sm text-muted">
-                Eerste gewonnen klus €0 commissie, daarna 10% (max €400 panelen / €600 batterij).
+                Voor nieuwe schriftelijke afspraken: €175 voor zonnepanelen, €225 voor een thuisbatterij of oorspronkelijke combinatie, exclusief btw. Pas na oplevering én ontvangen klantbetaling; factuurtermijn 7 dagen. Eerdere afspraken en toegezegde gratis opdrachten blijven gelden. Activatie alleen vervangt geen overeenkomst.
               </p>
               <Button type="button" onClick={() => void confirm()} disabled={busy}>
                 {busy ? "Bezig…" : "Activeer account"}

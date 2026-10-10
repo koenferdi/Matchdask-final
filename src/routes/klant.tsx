@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
 import { PortalGate } from "@/components/portal-gate";
-import { findPartnerFor, runScan, kwh } from "@/lib/matchdesk";
+import { runScan, kwh, CONTACT } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 
@@ -20,9 +21,11 @@ function KlantPage() {
 function Klant() {
   const user = useCurrentUser();
   const { leads, partners, requestMatch } = useMatchdesk();
+  const [matchBusy, setMatchBusy] = useState(false);
+  const [matchMessage, setMatchMessage] = useState("");
   const email = user?.primaryEmail?.toLowerCase();
   const mine = email ? leads.filter((l) => l.email.toLowerCase() === email) : [];
-  const lead = mine[0] ?? (user?.isDevFallback ? leads[0] : undefined);
+  const lead = mine[0];
 
   if (!lead) {
     return (
@@ -41,7 +44,20 @@ function Klant() {
 
   const scan = runScan(lead);
   const partner = lead.partnerId ? partners.find((p) => p.id === lead.partnerId) : undefined;
-  const candidate = findPartnerFor(lead, partners);
+
+  async function submitMatch() {
+    if (matchBusy || !lead) return;
+    setMatchBusy(true);
+    setMatchMessage("");
+    try {
+      const result = await requestMatch(lead.id);
+      setMatchMessage(result.message);
+    } catch {
+      setMatchMessage("De match is niet bevestigd. Probeer opnieuw of neem contact op met Matchdesk.");
+    } finally {
+      setMatchBusy(false);
+    }
+  }
 
   return (
     <main className="bg-paper py-16 text-ink">
@@ -71,7 +87,7 @@ function Klant() {
               </div>
               <div className="rounded-md bg-paper p-3">
                 <small className="text-[11px] uppercase tracking-wider text-muted">Inschatting</small>
-                <strong className="mt-1 block">{lead.product === "Thuisbatterij" ? `${scan.batteryKwh} kWh` : kwh(scan.yieldKwh)}</strong>
+                <strong className="mt-1 block">{lead.product === "Thuisbatterij" ? (scan.batteryKwh == null ? "Nog te bepalen" : `${scan.batteryKwh} kWh`) : kwh(scan.yieldKwh)}</strong>
               </div>
             </div>
             <p className="mt-4 text-sm text-muted">{scan.matchHint}</p>
@@ -84,30 +100,31 @@ function Klant() {
               ))}
             </ol>
             {lead.status === "Nieuw" ? (
-              <Button className="mt-6" onClick={() => requestMatch(lead.id)}>
-                Vraag één installateur aan <ArrowRight className="size-4" />
+              <Button className="mt-6" disabled={matchBusy} onClick={() => void submitMatch()}>
+                {matchBusy ? "Match aanvragen…" : "Vraag één installateur aan"} <ArrowRight className="size-4" />
               </Button>
             ) : (
               <div className="mt-6 rounded-md border border-line bg-paper p-4">
                 <small className="text-[11px] uppercase tracking-wider text-muted">Jouw installateur</small>
-                <strong className="mt-1 block text-lg">{partner?.name ?? candidate?.name ?? "In behandeling"}</strong>
+                <strong className="mt-1 block text-lg">{partner?.name ?? "In behandeling"}</strong>
                 <p className="text-sm text-muted">Eén bedrijf. Geen offerte-circus.</p>
               </div>
             )}
+            {matchMessage ? <p className="mt-4 text-sm text-muted" role="status">{matchMessage}</p> : null}
           </section>
           <aside className="space-y-4">
             <div className="rounded-lg border border-line bg-white p-6">
               <h3 className="font-display text-xl">Fit-rapport</h3>
-              <p className="mt-2 text-sm text-muted">Na betaling van €39 staat hier je dossier voor de installateur.</p>
+              <p className="mt-2 text-sm text-muted">Nieuwe verkoop is gepauzeerd. Heb je al gekocht? Open de informatie over toegang en ondersteuning; betaal niet opnieuw.</p>
               <Button asChild variant="ghost" className="mt-4 w-full">
                 <Link to="/rapport">Open woningrapport</Link>
               </Button>
             </div>
             <div className="rounded-lg border border-line bg-white p-6">
               <h3 className="font-display text-xl">Volgende stap</h3>
-              <p className="mt-2 text-sm text-muted">Plan een telefonisch gesprek of bekijk je voorbereiding.</p>
+              <p className="mt-2 text-sm text-muted">Bespreek een telefonisch gesprek met Matchdesk. Een verzoek is nog geen bevestigde afspraak.</p>
               <Button asChild variant="ghost" className="mt-4 w-full">
-                <Link to="/klant/afspraken">Afspraak maken</Link>
+                <a href={`mailto:${CONTACT.email}?subject=${encodeURIComponent(`Gesprek over dossier ${lead.id}`)}`}>Vraag een gesprek aan</a>
               </Button>
             </div>
             {lead.appointment ? (

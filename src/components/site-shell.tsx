@@ -15,6 +15,7 @@ const NAV = [
   { to: "/", label: "Oriëntatie" },
   { to: "/woning", label: "Voor je woning" },
   { to: "/voor-bedrijven", label: "Voor bedrijven" },
+  { to: "/opvolgdesk", label: "Opvolgdesk" },
   { to: "/blog", label: "Inzicht" },
 ] as const;
 
@@ -28,7 +29,7 @@ export function SiteShell() {
 
   useEffect(() => {
     hydrate();
-  }, [hydrate]);
+  }, [hydrate, user?.primaryEmail]);
 
   useEffect(() => {
     setOpen(false);
@@ -146,16 +147,17 @@ export function SiteShell() {
             <Link to="/rapport">Mijn woningrapport</Link>
             <Link to="/voorbeeld-rapport">Voorbeeldrapport</Link>
             <Link to="/klant">Mijn project</Link>
-            <Link to="/klant/afspraken">Afspraak maken</Link>
+            <a href={`mailto:${CONTACT.email}`}>Contact over je afspraak</a>
             <Link to="/tools">Slimme tools</Link>
             <Link to="/blog">Inzicht & blog</Link>
             <Link to="/nieuwsbrief">Nieuwsbrief</Link>
           </FooterCol>
           <FooterCol title="Voor jouw bedrijf">
             <Link to="/voor-bedrijven">Start voor installateurs</Link>
+            <Link to="/opvolgdesk">Opvolgdesk voor eigen aanvragen</Link>
             <Link to="/installateurs">Geverifieerde installateurs</Link>
-            <Link to="/exclusief">Optionele badge</Link>
-            <Link to="/voorbeeld-badge">Badge-pakket</Link>
+            <Link to="/exclusief">Bestaande badgeafspraken</Link>
+            <Link to="/voorbeeld-badge">Voorbeeld badge</Link>
             <Link to="/aanmelden">Bedrijf aanmelden</Link>
             <Link to="/bedrijf">Bedrijfsportaal</Link>
           </FooterCol>
