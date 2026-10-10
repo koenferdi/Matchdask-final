@@ -2,6 +2,7 @@ import { genericOAuthClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { runPreSignInSignOut, runSignOut } from "../../../scripts/sign-out-plan.mjs";
 import { GROK_PROVIDERS, LOGIN_PROVIDERS } from "./providers";
+import { clearWorkspaceCache } from "../session-cache.mjs";
 
 /**
  * Better Auth client for this React SPA (browser-side).
@@ -117,7 +118,10 @@ export async function signIn(
     livePreview: inLivePreview(),
     hasBearer: Boolean(getBearerToken()),
     requestSignOut: () => authClient.signOut(),
-    clearToken: () => setBearerToken(null),
+    clearToken: () => {
+      setBearerToken(null);
+      try { clearWorkspaceCache(window.localStorage); } catch { /* storage getter may be denied */ }
+    },
   });
 
   if (inLivePreview()) {
@@ -236,7 +240,10 @@ export async function signOut(redirectTo = "/"): Promise<void> {
       const { error } = await authClient.signOut();
       if (error) throw new Error(error.message ?? "Sign-out failed");
     },
-    clearToken: () => setBearerToken(null),
+    clearToken: () => {
+      setBearerToken(null);
+      try { clearWorkspaceCache(window.localStorage); } catch { /* storage getter may be denied */ }
+    },
     redirect: () => {
       window.location.href = redirectTo;
     },

@@ -48,16 +48,16 @@ export function FitDocument({ lead, sample = false }: { lead: Lead; sample?: boo
           <Row k="Meterkast" v={lead.meter ?? "niet opgegeven"} />
           <Row k="Bestaande panelen" v={lead.hasSolar ? "Ja" : "Nee / niet opgegeven"} />
         </Block>
-        <Block title="Eerste inschatting">
+        <Block title="Nog te beoordelen">
           <Row k="Regio" v={fit.scan.region} />
           <Row k="Netbeheerder" v={fit.operator} />
           <Row k="Geschiktheid" v={fit.scan.suitability} />
           <Row
-            k={lead.product === "Thuisbatterij" ? "Batterij (richt)" : "Veld (richt)"}
+            k={lead.product === "Thuisbatterij" ? "Batterijcapaciteit" : "Panelen en opwek"}
             v={
               lead.product === "Thuisbatterij"
-                ? `${fit.scan.batteryKwh} kWh`
-                : `${fit.scan.panels} panelen · ${kwh(fit.scan.yieldKwh)}`
+                ? (fit.scan.batteryKwh == null ? "Nog te bepalen door installateur" : `${fit.scan.batteryKwh} kWh`)
+                : (fit.scan.panels == null || fit.scan.yieldKwh == null ? "Nog te bepalen door installateur" : `${fit.scan.panels} panelen · ${kwh(fit.scan.yieldKwh)}`)
             }
           />
         </Block>

@@ -1,96 +1,36 @@
-import { useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
 import { ProofBadge } from "@/components/proof-badge";
-import { CONTACT, STRIPE } from "@/lib/matchdesk";
-import { useMatchdesk } from "@/lib/store";
+import { CONTACT } from "@/lib/matchdesk";
+import { PAUSED_OFFERS_TEXT } from "@/lib/commercial.mjs";
 
 type Search = { paid?: string };
-
 export const Route = createFileRoute("/exclusief")({
-  validateSearch: (s: Record<string, unknown>): Search => ({
-    paid: typeof s.paid === "string" ? s.paid : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): Search => ({ paid: typeof s.paid === "string" ? s.paid : undefined }),
   component: ExclusiefPage,
 });
 
 function ExclusiefPage() {
   const { paid } = Route.useSearch();
-  const { exclusivePaid, markExclusivePaid } = useMatchdesk();
-  useEffect(() => {
-    if (paid === "1") markExclusivePaid();
-  }, [paid, markExclusivePaid]);
-  const unlocked = paid === "1" || exclusivePaid;
-
   return (
     <main className="bg-paper py-16 text-ink">
       <Wrap className="max-w-3xl">
-        <PageIntro kicker="Optioneel · Exclusief-proof · €149" title="Een badge. Geen toegangskaartje.">
-          Aanmelden als bedrijf is gratis. Dit bedrag is alleen voor de keuring van de publieke badge. Betalen zet je niet live. Matchdesk laat toe — of niet.
+        <PageIntro kicker="Badgekeuring · bestaande afspraken" title="Een beoordeling volgens afspraak.">
+          {PAUSED_OFFERS_TEXT} Gratis aanmelden voor matching blijft mogelijk zonder een badge te kopen.
         </PageIntro>
-
-        <div className="mb-10 flex flex-wrap items-center gap-6 rounded-lg border border-line bg-night p-6 text-paper">
+        <div className="mb-8 flex flex-wrap items-center gap-6 rounded-lg border border-line bg-night p-6 text-paper">
           <ProofBadge className="h-28 w-28" />
-          <div>
-            <p className="text-xs tracking-[0.16em] text-mint">DE BADGE</p>
-            <h2 className="mt-1 font-display text-2xl">Exclusief partner · gecontroleerd door Matchdesk</h2>
-            <Link to="/voorbeeld-badge" className="mt-2 inline-block text-sm text-mint underline-offset-4 hover:underline">
-              Bekijk het pakket
-            </Link>
-          </div>
+          <div><p className="text-xs tracking-wider text-mint">VOORBEELD VAN DE BADGE</p><h2 className="mt-2 font-display text-2xl">Geen bewijs van toelating of betaling.</h2><Link to="/voorbeeld-badge" className="mt-2 inline-block text-sm text-mint">Lees over het bestaande pakket</Link></div>
         </div>
-
-        {unlocked ? (
-          <p className="mb-8 rounded-md border border-line bg-mint/20 px-4 py-3 text-sm">
-            Betaling ontvangen. Je staat nog niet live. Wacht op keuring in Beheer.
-          </p>
-        ) : null}
-
-        <ol className="space-y-5">
-          <li><strong>1. Eerst aanmelden — gratis.</strong> KvK, prefixen, vak. Geen betaling nodig.</li>
-          <li><strong>2. Optioneel: keuring €149.</strong> Alleen als je de badge wilt. Geen leadpakket.</li>
-          <li><strong>3. Matchdesk beoordeelt.</strong> Actief, pauze of afwijzen. Nooit automatisch.</li>
-          <li><strong>4. Bij Actief:</strong> 1:1-aanvragen. Badge alleen als de keuring is betaald én je bent toegelaten.</li>
-        </ol>
-
-        <ul className="mt-8 space-y-2 text-sm">
-          <Line>Geen automatische plaatsing na Stripe</Line>
-          <Line>Geen veiling, geen cc naar concurrenten</Line>
-          <Line>Badge alleen ná toelating</Line>
-        </ul>
-
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild>
-            <Link to="/aanmelden">Eerst gratis aanmelden</Link>
-          </Button>
-          {!unlocked ? (
-            <Button asChild variant="ghost">
-              <a href={STRIPE.exclusief}>Optioneel: keuring €149</a>
-            </Button>
-          ) : (
-            <Button asChild variant="ghost">
-              <Link to="/bedrijf">Naar bedrijfsportaal</Link>
-            </Button>
-          )}
-          <Button asChild variant="ghost">
-            <Link to="/voorbeeld-badge">Voorbeeld van het pakket</Link>
-          </Button>
-          <Button asChild variant="ghost">
-            <a href={CONTACT.whatsapp} target="_blank" rel="noreferrer">WhatsApp</a>
-          </Button>
-        </div>
+        {paid ? <p className="mb-6 rounded-md border border-line bg-paper p-4 text-sm">Deze terugkeerlink bewijst geen betaling of goedkeuring. Matchdesk controleert je aankoop en keuring afzonderlijk.</p> : null}
+        <section className="rounded-lg border border-line bg-white p-7">
+          <h2 className="font-display text-2xl">Een keuring gekocht of afgesproken?</h2>
+          <p className="mt-3 text-sm leading-7 text-muted">We blijven de overeengekomen beoordeling en levering uitvoeren. Neem contact op met je bedrijfsnaam, bestelling of overeenkomstreferentie. Betaal niet opnieuw. Een betaalde keuring is geen automatisch keurmerk, toegang tot aanvragen of omzetgarantie.</p>
+          <p className="mt-3 text-sm text-muted">Alleen een afzonderlijk positief keuringsbesluit geeft recht op de badge voor de afgesproken geldigheid. Matching vraagt gratis aanmelding, toelating en beschikbare capaciteit; de badge geeft daarbij geen voorrang.</p>
+          <div className="mt-6 flex flex-wrap gap-3"><Button asChild><a href={`mailto:${CONTACT.email}?subject=${encodeURIComponent("Bestaande badgekeuring")}`}>Hulp bij mijn keuring</a></Button><Button asChild variant="ghost"><Link to="/aanmelden">Gratis aanmelden</Link></Button><Button asChild variant="ghost"><Link to="/bedrijf">Bedrijfsportaal</Link></Button></div>
+        </section>
       </Wrap>
     </main>
-  );
-}
-
-function Line({ children }: { children: string }) {
-  return (
-    <li className="flex gap-2">
-      <Check className="mt-0.5 size-4 shrink-0 text-teal" />
-      {children}
-    </li>
   );
 }

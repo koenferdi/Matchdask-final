@@ -11,14 +11,12 @@ const OWNER_EMAILS = new Set([
 export function isOwnerEmail(email?: string | null) {
   const value = email?.trim().toLowerCase() ?? "";
   if (!value) return false;
-  if (OWNER_EMAILS.has(value)) return true;
-  if (value.endsWith("@getmatchdesk.nl")) return true;
-  return false;
+  return OWNER_EMAILS.has(value);
 }
 
 export function isOwner(user: AppUser | null | undefined) {
   if (!user) return false;
-  if (isOwnerEmail(user.primaryEmail)) return true;
-  const name = user.displayName?.trim().toLowerCase() ?? "";
-  return name.startsWith("koen ");
+  // Presentation names are editable and do not establish an admin identity.
+  // Server endpoints additionally require a verified authenticated e-mail.
+  return isOwnerEmail(user.primaryEmail);
 }

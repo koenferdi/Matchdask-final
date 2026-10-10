@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Wrap } from "@/components/site-shell";
 import { ProofBadge } from "@/components/proof-badge";
-import { STRIPE } from "@/lib/matchdesk";
+import { CONTACT } from "@/lib/matchdesk";
 
 export const Route = createFileRoute("/voorbeeld-badge")({ component: BadgePakket });
 
@@ -14,7 +14,7 @@ function BadgePakket() {
         <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-teal">Voorbeeld · Exclusief-proof</p>
         <h1 className="font-display text-[clamp(2rem,4vw,3rem)]">Het badge-pakket</h1>
         <p className="mt-3 max-w-xl text-muted">
-          Geen automatisch vinkje. Je betaalt de keuring. Matchdesk laat toe — of niet. Pas daarna badge én plek op de publieke lijst.
+          Nieuwe verkoop van badgekeuringen is gepauzeerd. Dit beschrijft het bestaande pakket; eerder gekochte keuringen blijven volgens de gemaakte afspraak uitgevoerd. Betalen alleen bewijst geen toelating of kwaliteit.
         </p>
 
         <div className="mt-10 grid items-center gap-8 rounded-lg border border-line bg-night p-8 text-paper md:grid-cols-[auto_1fr]">
@@ -37,7 +37,7 @@ function BadgePakket() {
             Naam op de publieke lijst. 1:1-aanvragen in jullie prefixen. Geen volume-garantie.
           </Step>
           <Step n="4" t="Optioneel: badge">
-            Alleen als je de publieke keuring wilt. Geen voorwaarde om lid te worden. Geen leadpakket.
+            Voor bestaande keuringsafspraken. Nieuwe verkoop is gepauzeerd. Geen voorwaarde voor matching en geen leadpakket.
           </Step>
         </ol>
 
@@ -54,7 +54,7 @@ function BadgePakket() {
 
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild>
-            <a href={STRIPE.exclusief}>Claim early-bird €149</a>
+            <a href={`mailto:${CONTACT.email}`}>Hulp bij een bestaande keuring</a>
           </Button>
           <Button asChild variant="ghost">
             <Link to="/exclusief">Uitleg keuring</Link>

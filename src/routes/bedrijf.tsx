@@ -5,7 +5,7 @@ import { PageIntro, Wrap } from "@/components/site-shell";
 import { PortalGate } from "@/components/portal-gate";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import type { Partner } from "@/lib/matchdesk";
-import { findOwnPartner, isMatchablePartner, selfServeView } from "@/lib/partner-portal.mjs";
+import { isMatchablePartner, parseCapacity, selfServeView } from "@/lib/partner-portal.mjs";
 import { useMatchdesk } from "@/lib/store";
 
 export const Route = createFileRoute("/bedrijf")({
@@ -40,16 +40,33 @@ function BedrijfPage() {
 }
 
 function Bedrijf({ email, name }: { email: string; name: string }) {
-  const partners = useMatchdesk((s) => s.partners);
+  const ownPartner = useMatchdesk((s) => s.ownPartner);
+  const remoteError = useMatchdesk((s) => s.remoteError);
+  const hydrate = useMatchdesk((s) => s.hydrate);
   const ready = useMatchdesk((s) => s.ready);
   const remoteReady = useMatchdesk((s) => s.remoteReady);
-  const partner = email ? findOwnPartner(partners, email) : null;
+  const partner = email && ownPartner?.email?.trim().toLowerCase() === email.trim().toLowerCase() ? ownPartner : null;
+
+  useEffect(() => {
+    hydrate();
+  }, [email, hydrate]);
 
   if (!ready || !remoteReady) {
     return (
       <main className="bg-paper py-16">
         <Wrap>
           <div className="h-40 animate-pulse rounded-lg bg-line/60" />
+        </Wrap>
+      </main>
+    );
+  }
+
+  if (remoteError) {
+    return (
+      <main className="bg-paper py-16 text-ink">
+        <Wrap>
+          <PageIntro kicker="Bedrijfsportaal" title="Bedrijfsgegevens niet beschikbaar.">{remoteError}</PageIntro>
+          <Button type="button" onClick={() => hydrate()}>Opnieuw laden</Button>
         </Wrap>
       </main>
     );
@@ -206,16 +223,12 @@ function Availability({
         className="mt-6"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!/^\d+$/.test(capacity.trim())) {
+          const parsed = parseCapacity(capacity);
+          if (!parsed.ok) {
             setNote("Capaciteit is een geheel getal van 0 tot en met 999.");
             return;
           }
-          const next = Number(capacity);
-          if (next > 999) {
-            setNote("Capaciteit is een geheel getal van 0 tot en met 999.");
-            return;
-          }
-          void save({ capacity: next });
+          void save({ capacity: parsed.capacity });
         }}
       >
         <label className="block text-sm font-semibold">

@@ -21,13 +21,23 @@ export const WRONG_PARTNER_MESSAGE = "Dit account hoort niet bij dat bedrijf.";
 
 export const EMPTY_PATCH_MESSAGE = "Geen status of capaciteit meegegeven.";
 
+export const VERIFY_EMAIL_MESSAGE =
+  "Je e-mailadres is nog niet geverifieerd. Verifieer het voordat je je bedrijf beheert.";
+
 const SELF_SERVE_STATUS = new Set(["Actief", "Gepauzeerd"]);
 
 export function isMatchablePartner(partner) {
   if (!partner || partner.example) return false;
   if (partner.status !== "Actief") return false;
-  const capacity = Number(partner.capacity);
-  return Number.isFinite(capacity) && capacity > 0;
+  const parsed = parseCapacity(partner.capacity);
+  return parsed.ok && parsed.capacity > 0;
+}
+
+/** Identity must come from Better Auth, never from the POST body or display name. */
+export function workspaceIdentity(user, isOwnerEmail) {
+  const email = typeof user?.email === "string" ? user.email.trim().toLowerCase() : "";
+  const verified = Boolean(email) && user?.emailVerified === true;
+  return { email, verified, owner: verified && isOwnerEmail(email) };
 }
 
 function admissionStamp(partner, ledgerStamp) {
@@ -53,7 +63,7 @@ export function selfServeView(partner, ledgerStamp) {
 }
 
 export function parseCapacity(value) {
-  if (typeof value === "boolean" || value == null) return { ok: false };
+  if (typeof value !== "number" && typeof value !== "string") return { ok: false };
   const text = String(value).trim();
   if (!/^\d+$/.test(text)) return { ok: false };
   const capacity = Number(text);
@@ -85,7 +95,10 @@ export function findOwnPartner(partners, email) {
 export function resolveSelfServeTarget(partners, email, requestedId) {
   const partner = findOwnPartner(partners, email);
   if (!partner) return { ok: false, status: 404, message: NO_PARTNER_MESSAGE };
-  const id = requestedId == null ? "" : String(requestedId).trim();
+  if (requestedId != null && typeof requestedId !== "string") {
+    return { ok: false, status: 409, message: WRONG_PARTNER_MESSAGE };
+  }
+  const id = requestedId == null ? "" : requestedId.trim();
   if (id && id !== partner.id) {
     return { ok: false, status: 409, message: WRONG_PARTNER_MESSAGE };
   }
@@ -101,9 +114,9 @@ export function applyPartnerSelfServe(current, patch, ledgerStamp) {
     return { ok: false, status: 403, code: "gate", message: GATE_MESSAGE, partner: current };
   }
 
-  const source = patch && typeof patch === "object" ? patch : {};
-  const hasStatus = source.status != null && String(source.status).trim() !== "";
-  const hasCapacity = source.capacity != null && String(source.capacity).trim() !== "";
+  const source = patch && typeof patch === "object" && !Array.isArray(patch) ? patch : {};
+  const hasStatus = Object.hasOwn(source, "status");
+  const hasCapacity = Object.hasOwn(source, "capacity");
   if (!hasStatus && !hasCapacity) {
     return { ok: false, status: 422, code: "empty", message: EMPTY_PATCH_MESSAGE, partner: current };
   }
@@ -113,7 +126,7 @@ export function applyPartnerSelfServe(current, patch, ledgerStamp) {
   if (stamp && !next.activatedAt) next.activatedAt = stamp;
 
   if (hasStatus) {
-    const status = String(source.status).trim();
+    const status = typeof source.status === "string" ? source.status.trim() : "";
     if (!SELF_SERVE_STATUS.has(status)) {
       return { ok: false, status: 422, code: "status", message: STATUS_MESSAGE, partner: current };
     }

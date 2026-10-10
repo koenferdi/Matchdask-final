@@ -27,7 +27,7 @@ Zet ze in `/etc/matchdesk.env` op de VPS. Niet in git.
 | `MATCHDESK_PUBLIC_URL` | Basis voor links. Standaard `https://www.getmatchdesk.nl`. |
 | `MATCHDESK_DATA` | Map voor `workspace.json` en `mail-ledger.json`. Standaard `/opt/matchdesk/data`. |
 
-`fix-hero.sh` en `deploy/vps.sh` vullen ontbrekende sleutels aan zonder een bestaande `RESEND_API_KEY` te overschrijven.
+Gebruik voor productie de gecontroleerde procedure in `docs/RELEASE_VALIDATION.md`. De deelrepository is geen volledige deploybron; `fix-hero.sh` voert geen blinde synchronisatie meer uit.
 
 ## Testen
 
@@ -47,7 +47,7 @@ node --test src/lib/mail/core.test.mjs
 
 ## Cockpit — tab Mail
 
-Alleen eigenaar (`isOwnerEmail`). Tab **Mail** in `/beheer` haalt `GET /api/mail/log` op.
+Alleen een servergeverifieerde eigenaarssessie met een expliciet toegelaten e-mailadres (`ownerFrom`). Tab **Mail** in `/beheer` haalt `GET /api/mail/log` op.
 
 Bronnen in `mail-ledger.json`:
 
@@ -88,4 +88,4 @@ Voorbeeld van de registratie/activatie-mail (Pieter, RD Solar Group, demotoken):
 - `ops/mail/activatie-registratie.html`
 - `ops/mail/activatie-registratie.txt`
 
-Afspraken in elke partnermail: 1 lead · 1 installateur, eerste gewonnen klus €0, daarna 10% (max €400 panelen / €600 batterij). Geen kennismaking-CTA.
+Nieuwe partnermails gebruiken de versiegebonden voorwaarden uit `src/lib/commercial.mjs`: €175 zonnepanelen, €225 batterij of oorspronkelijke combinatie, exclusief btw en pas na oplevering én ontvangen klantbetaling. Bestaande schriftelijke afspraken en eerder toegezegde gratis opdrachten blijven gelden. Een activatie is geen bewijs van schriftelijke acceptatie van nieuwe tarieven. De voorbeeldmail heeft uitsluitend een demotoken; hij is niet verstuurd.

@@ -3,7 +3,6 @@ import { ArrowRight, Calendar, Check, MapPin, Shield, type LucideIcon } from "lu
 import { Button } from "@/components/ui/button";
 import { Wrap } from "@/components/site-shell";
 import { PartnerCommercialFacts } from "@/components/marketing/partner-commercial";
-import { SoftLaunchWestBrabant } from "@/components/marketing/soft-launch-west-brabant";
 import { useMatchdesk } from "@/lib/store";
 import { ProofBadge } from "@/components/proof-badge";
 
@@ -33,7 +32,7 @@ function Installateurs() {
               Exclusieve aanvragen die passen bij je specialisme en werkgebied. Eén overzicht voor je projecten, planning en commissie.
             </p>
             <div className="mt-6">
-              <SoftLaunchWestBrabant ctaHref="/aanmelden" taken={0} />
+              <p className="rounded-lg border border-line bg-white p-4 text-sm text-muted">Gerichte start in Breda en omgeving. We beoordelen aanmeldingen en stemmen de samenwerking af op echte aanvragen en beschikbare capaciteit. Geen garantie op een partnerplek of volume.</p>
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild variant="mint">
@@ -50,7 +49,7 @@ function Installateurs() {
             </Link>
             <div className="mt-6 flex flex-wrap gap-5 text-sm">
               <span className="inline-flex items-center gap-2"><Check className="size-4 text-teal" />Per aanvraag de enige</span>
-              <span className="inline-flex items-center gap-2"><Check className="size-4 text-teal" />48 uur om te reageren</span>
+              <span className="inline-flex items-center gap-2"><Check className="size-4 text-teal" />Eén werkdag om te reageren</span>
             </div>
           </div>
           <div className="rounded-lg border border-line bg-white p-6 shadow-[var(--shadow-card)]">
@@ -61,7 +60,7 @@ function Installateurs() {
             {(
               [
                 [MapPin, "Jouw werkgebied", "Ontvang aanvragen uit jouw postcodegebieden."],
-                [Shield, "Jouw expertise", "Kwaliteit en specialisme bepalen de aansluiting."],
+                [Shield, "Jouw expertise", "Specialisme, toelating en capaciteit bepalen de aansluiting."],
                 [Calendar, "Jouw overzicht", "Aanvragen, afspraken en voortgang op één plek."],
               ] as const satisfies ReadonlyArray<readonly [LucideIcon, string, string]>
             ).map(([Icon, t, d]) => (
@@ -76,9 +75,9 @@ function Installateurs() {
               </div>
             ))}
             <div className="mt-4 border-t border-line pt-4">
-              <strong className="text-[15px]">Commissie alleen als de opdracht gewonnen is.</strong>
+              <strong className="text-[15px]">Vaste fee na oplevering en klantbetaling.</strong>
               <p className="mt-2 text-[13px] text-muted">
-                Eerste gewonnen klus €0, daarna 10% van de grondslag, standaard exclusief btw. Een match is geen garantie op een opdracht.
+                €175 voor zonnepanelen of €225 voor een thuisbatterij of de oorspronkelijke combinatie, exclusief btw, bij nieuwe schriftelijke afspraken. Eén opdracht, één fee. Bestaande afspraken blijven gelden; een match garandeert geen opdracht.
               </p>
             </div>
           </div>
@@ -111,7 +110,7 @@ function Installateurs() {
           <section className="mt-16">
             <h2 className="text-3xl">Geverifieerde installateurs</h2>
             <p className="mt-2 max-w-xl text-muted">
-              Alleen bedrijven die Matchdesk heeft toegelaten. Geen voorbeelden, geen veiling. Exclusief-proof betekent: keuring betaald én Actief.
+              Alleen bedrijven die Matchdesk heeft toegelaten. Geen voorbeeldprofielen. Een eerder afgesproken badgekeuring is afzonderlijk van toelating; betalen alleen bewijst geen kwaliteit.
             </p>
             {verified.length === 0 ? (
               <p className="mt-6 rounded-lg border border-line bg-white p-6 text-sm text-muted">
@@ -138,7 +137,7 @@ function Installateurs() {
                 <Link to="/aanmelden">Meld je bedrijf aan</Link>
               </Button>
               <Button asChild variant="ghost">
-                <Link to="/exclusief">Exclusief-proof · €149</Link>
+                <Link to="/opvolgdesk">Opvolgdesk voor bestaande aanvragen</Link>
               </Button>
             </div>
           </section>

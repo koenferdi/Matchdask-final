@@ -4,7 +4,6 @@ import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, Wrap } from "@/components/site-shell";
 import { PartnerCommercialFacts } from "@/components/marketing/partner-commercial";
-import { SoftLaunchWestBrabant } from "@/components/marketing/soft-launch-west-brabant";
 import { PRODUCTS, type Product } from "@/lib/matchdesk";
 import { useMatchdesk } from "@/lib/store";
 
@@ -15,9 +14,12 @@ function Aanmelden() {
   const [done, setDone] = useState<{ name: string; email: string } | null>(null);
   const [products, setProducts] = useState<Product[]>(["Zonnepanelen"]);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy) return;
+    setError("");
     const data = new FormData(e.currentTarget);
     const name = String(data.get("name") || "").trim();
     const contactName = String(data.get("contact") || "").trim();
@@ -32,8 +34,16 @@ function Aanmelden() {
     if (!/^[0-9]{8}$/.test(kvk)) return setError("Een KvK-nummer bestaat uit acht cijfers.");
     if (!products.length) return setError("Kies minstens één specialisme.");
     if (!prefixes.length) return setError("Vul postcodegebieden in, bijvoorbeeld 35 34 39.");
-    submitPartner({ name, email, contactName: contactName || undefined, kvk, products, prefixes, capacity });
-    setDone({ name, email });
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 20) return setError("Kies een capaciteit van 1 tot en met 20 projecten.");
+    setBusy(true);
+    try {
+      await submitPartner({ name, email, contactName: contactName || undefined, kvk, products, prefixes, capacity });
+      setDone({ name, email });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Opslaan is niet bevestigd. Probeer opnieuw; je gegevens blijven in het formulier.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (done) {
@@ -50,7 +60,7 @@ function Aanmelden() {
               </div>
               <h2 className="text-3xl">Je aanmelding is binnen.</h2>
               <p className="mt-3 text-muted">
-                Er gaat nu nog geen activatiemail uit. Die volgt nadat KvK en werkgebied kloppen. Eén lead, één installateur. Na een matchmelding heb je 48 uur om te accepteren of te weigeren. Eerste gewonnen klus €0, daarna 10% van de grondslag, standaard exclusief btw (max. €400 panelen, €600 batterij of combinatie).
+                Er gaat nu nog geen activatiemail uit. Die volgt na beoordeling. Accepteer of weiger een aangeboden aanvraag binnen één werkdag; doe na acceptatie binnen twee werkdagen een eerste contactpoging. Nieuwe vaste fees gelden pas na schriftelijke afspraak: €175 voor zonnepanelen, €225 voor een thuisbatterij of oorspronkelijke combinatie, exclusief btw. Pas na oplevering én klantbetaling. Bestaande afspraken blijven gelden.
               </p>
               <p className="mt-3 text-sm">
                 <Link to="/voorwaarden-installateurs" className="font-semibold text-teal">
@@ -80,7 +90,7 @@ function Aanmelden() {
             <aside className="h-fit rounded-lg border border-line bg-white p-6">
               <h3 className="font-display text-2xl">Later, als je wilt</h3>
               <p className="mt-2 text-sm text-muted">
-                Exclusief-proof is een optionele keuring voor een publieke badge. Geen voorwaarde om mee te doen.
+                Nieuwe verkoop van badgekeuringen is gepauzeerd. Eerder gemaakte afspraken worden uitgevoerd; een badge is geen voorwaarde om mee te doen.
               </p>
               <Link to="/exclusief" className="mt-3 inline-block text-sm font-semibold text-teal">
                 Wat de badge is
@@ -96,10 +106,10 @@ function Aanmelden() {
     <main className="bg-paper py-16 text-ink">
       <Wrap>
         <PageIntro kicker="Gratis aanmelden" title="Jouw bedrijf. Ons netwerk.">
-          Geen inschrijfgeld, geen abonnement en geen lock-in. Je vult KvK, vak en werkgebied in. Daarna beoordelen wij. Een badge is later optioneel.
+          Geen inschrijfgeld of abonnement voor matching. Je vult KvK, vak en werkgebied in. Daarna beoordelen wij en leggen we de commerciële afspraken schriftelijk vast. Aanmelden alleen is geen acceptatie van een betaald aanbod.
         </PageIntro>
         <div className="mt-8">
-          <SoftLaunchWestBrabant ctaHref="#aanmelden" taken={0} />
+          <p className="rounded-lg border border-line bg-white p-4 text-sm text-muted">We starten gericht in Breda en omgeving. Een aanmelding geeft geen garantie op toelating of een aantal aanvragen; beschikbare capaciteit en schriftelijke afspraken gaan voor.</p>
         </div>
         <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_320px]">
           <section className="rounded-lg border border-line bg-white p-8">
@@ -152,8 +162,8 @@ function Aanmelden() {
                 <input name="capacity" type="number" min={1} max={20} defaultValue={3} className="field-input mt-1.5" />
               </label>
               {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
-              <Button type="submit">
-                Bedrijf aanmelden <ArrowRight className="size-4" />
+              <Button type="submit" disabled={busy}>
+                {busy ? "Aanmelding opslaan…" : "Bedrijf aanmelden"} <ArrowRight className="size-4" />
               </Button>
             </form>
           </section>

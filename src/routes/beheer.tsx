@@ -329,6 +329,22 @@ function Aanvragen() {
   const leads = visibleLeads(rawLeads);
   const [blockNote, setBlockNote] = useState("");
   const [forceId, setForceId] = useState<string | null>(null);
+  const [matchingId, setMatchingId] = useState<string | null>(null);
+  const [matchNote, setMatchNote] = useState<{ id: string; message: string } | null>(null);
+
+  async function onMatch(id: string) {
+    if (matchingId) return;
+    setMatchingId(id);
+    setMatchNote(null);
+    try {
+      const result = await requestMatch(id);
+      setMatchNote({ id, message: result.message || (result.ok ? "Match door de server opgeslagen." : "Matchen lukte niet.") });
+    } catch {
+      setMatchNote({ id, message: "Matchen lukte niet. Vernieuw de gegevens en probeer opnieuw." });
+    } finally {
+      setMatchingId(null);
+    }
+  }
 
   function onDelete(lead: Lead) {
     setBlockNote("");
@@ -401,6 +417,7 @@ function Aanvragen() {
                   </div>
                   <select
                     className="field-input max-w-[11rem] py-1 text-xs"
+                    disabled={Boolean(matchingId)}
                     value={l.status}
                     onChange={(e) => setLeadStatus(l.id, e.target.value as Lead["status"])}
                   >
@@ -411,8 +428,8 @@ function Aanvragen() {
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {l.status === "Nieuw" ? (
-                    <Button size="sm" variant="mint" onClick={() => requestMatch(l.id)}>
-                      Match {p?.name ?? "partner"}
+                    <Button size="sm" variant="mint" disabled={Boolean(matchingId)} onClick={() => void onMatch(l.id)}>
+                      {matchingId === l.id ? "Match opslaan…" : `Match ${p?.name ?? "partner"}`}
                     </Button>
                   ) : (
                     <span className="text-xs text-mint/70">{p?.name ?? "geen partner"}</span>
@@ -420,6 +437,7 @@ function Aanvragen() {
                   <button
                     type="button"
                     className="ml-auto text-xs text-red-300"
+                    disabled={Boolean(matchingId)}
                     onClick={() => onDelete(l)}
                   >
                     Verwijder
@@ -428,12 +446,14 @@ function Aanvragen() {
                     <button
                       type="button"
                       className="text-xs font-semibold text-amber"
+                      disabled={Boolean(matchingId)}
                       onClick={() => onForceDelete(l)}
                     >
                       Forceer (admin)
                     </button>
                   ) : null}
                 </div>
+                {matchNote?.id === l.id ? <p role="status" className="mt-2 text-sm text-mint">{matchNote.message}</p> : null}
                 {l.partnerId && p?.status === "Actief" ? <PartnerBericht leadId={l.id} partnerId={p.id} /> : null}
               </li>
             );
@@ -564,6 +584,8 @@ function Installateurs({ gate }: { gate: GateApi }) {
   const [kvk, setKvk] = useState("");
   const [prefixes, setPrefixes] = useState("");
   const [product, setProduct] = useState<Product>("Zonnepanelen");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   return (
     <section>
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -579,9 +601,13 @@ function Installateurs({ gate }: { gate: GateApi }) {
       {open ? (
         <form
           className="mt-4 grid gap-3 rounded-lg border border-white/10 bg-deep p-4 md:grid-cols-2"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            submitPartner({
+            if (saving) return;
+            setSaving(true);
+            setSaveError("");
+            try {
+            await submitPartner({
               name,
               email,
               kvk,
@@ -594,8 +620,14 @@ function Installateurs({ gate }: { gate: GateApi }) {
             setKvk("");
             setPrefixes("");
             setOpen(false);
+            } catch (error) {
+              setSaveError(error instanceof Error ? error.message : "De server heeft de aanmelding niet bevestigd.");
+            } finally {
+              setSaving(false);
+            }
           }}
         >
+          {saveError ? <p role="alert" className="text-sm text-red-200 md:col-span-2">{saveError}</p> : null}
           <input className="field-input" required placeholder="Bedrijfsnaam" value={name} onChange={(e) => setName(e.target.value)} />
           <input className="field-input" required type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className="field-input" required placeholder="KvK" value={kvk} onChange={(e) => setKvk(e.target.value)} />
@@ -605,7 +637,7 @@ function Installateurs({ gate }: { gate: GateApi }) {
               <option key={p}>{p}</option>
             ))}
           </select>
-          <Button type="submit" variant="mint">Opslaan</Button>
+          <Button type="submit" variant="mint" disabled={saving}>{saving ? "Opslaan…" : "Opslaan"}</Button>
         </form>
       ) : null}
       <div className="mt-4 grid gap-3 md:grid-cols-2">

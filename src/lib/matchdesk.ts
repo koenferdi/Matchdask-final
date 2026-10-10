@@ -1,4 +1,5 @@
 import { isMatchablePartner } from "./partner-portal.mjs";
+export { COMMERCIAL, COMMERCIAL_VERSION, COMMISSION_TEXT, MATCH_SLA_TEXT, PAUSED_OFFERS_TEXT, createCommercialSnapshot, commissionEligibility, successFeeForProduct } from "./commercial.mjs";
 
 export const PRODUCTS = [
   "Zonnepanelen",
@@ -54,6 +55,22 @@ export type LeadDeal = {
   quote?: { reference: string; amountCents: number; basis: string };
   outcome?: "Gewonnen" | "Verloren";
   reason?: string;
+  /** New written agreement only. Existing dossiers without it retain their historical agreement. */
+  commercial?: {
+    version: string;
+    agreementId: string;
+    acceptedAt: string;
+    product: Product;
+    amountCents: number;
+    vatRate: number;
+    invoiceDays: number;
+    basis: "original-job-only";
+    payableAfter: "completed-and-customer-paid";
+  };
+  /** Verified actual completion and customer payment, distinct from a won quotation. */
+  completedAt?: string;
+  customerPaidAt?: string;
+  cancelled?: boolean;
   commission?: { amountCents: number; firstWin?: boolean; capCents?: number };
   invoice?: {
     reference: string;
@@ -131,6 +148,8 @@ export type Partner = {
   exclusivePaid?: boolean;
   /** Gezet door de activatiepagina, niet door het aanmeldformulier. */
   activatedAt?: string;
+  /** Reference to a written agreement; signup/activation never implies acceptance of new prices. */
+  commercialAgreement?: { version: string; acceptedAt: string; agreementId: string };
 };
 
 export type Subscriber = {
@@ -143,14 +162,15 @@ export type ScanResult = {
   leadId: string;
   region: string;
   suitability: "sterk" | "kansrijk" | "nader te bekijken";
-  yieldKwh: number;
-  panels: number;
-  batteryKwh: number;
+  /** Not inferable from a postcode or annual usage alone. Null until an installer calculates. */
+  yieldKwh: number | null;
+  panels: number | null;
+  batteryKwh: number | null;
   matchHint: string;
   nextSteps: string[];
 };
 
-const STORAGE_KEY = "matchdesk-workspace-v1";
+const STORAGE_KEY = "matchdesk-workspace-v2";
 
 export type AdminNote = { id: string; text: string; createdAt: string };
 
@@ -212,6 +232,8 @@ function emptyWorkspace(): Workspace {
 export function loadWorkspace(): Workspace {
   if (typeof window === "undefined") return emptyWorkspace();
   try {
+    // Do not import potentially owner-wide datasets or unverified payment flags from the previous cache.
+    localStorage.removeItem("matchdesk-workspace-v1");
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyWorkspace();
     const parsed = JSON.parse(raw) as Workspace;
@@ -274,9 +296,7 @@ export function findPartnerFor(lead: Pick<Lead, "product" | "postcode">, partner
   const regional = active.filter(
     (p) => p.prefixes.includes(prefix) && p.products.includes(lead.product),
   );
-  if (regional[0]) return regional[0];
-  const productFit = active.find((p) => p.products.includes(lead.product));
-  return productFit ?? active[0];
+  return regional[0];
 }
 
 export function money(n: number) {
@@ -287,69 +307,26 @@ export function money(n: number) {
   }).format(n);
 }
 
-export function kwh(n: number) {
+export function kwh(n: number | null | undefined) {
+  if (n == null || !Number.isFinite(n)) return "Nog te bepalen";
   return `${new Intl.NumberFormat("nl-NL").format(n)} kWh`;
 }
 
-export function netbeheerder(postcode: string) {
-  const n = Number(postcode.replace(/\D/g, "").slice(0, 2));
-  if (n >= 10 && n <= 19) return "Liander";
-  if (n >= 20 && n <= 29) return "Stedin";
-  if (n >= 30 && n <= 39) return "Stedin";
-  if (n >= 40 && n <= 49) return "Stedin";
-  if (n >= 50 && n <= 59) return "Enexis";
-  if (n >= 60 && n <= 69) return "Enexis";
-  if (n >= 70 && n <= 79) return "Liander";
-  if (n >= 80 && n <= 89) return "Enexis / Liander";
-  if (n >= 90) return "Enexis / Liander";
-  return "netbeheerder ter plaatse";
+export function netbeheerder(_postcode: string) {
+  // Two postcode digits cannot identify the actual connection/operator reliably.
+  return "Te controleren op het exacte adres";
 }
 
-const ORIENT: Record<RoofDir, number> = {
-  Zuid: 1,
-  Zuidwest: 0.93,
-  Zuidoost: 0.93,
-  Oost: 0.78,
-  West: 0.78,
-  "Noord / anders": 0.48,
-  "Weet ik niet": 0.86,
-};
-
-const SHADE_F: Record<Shade, number> = {
-  Weinig: 1,
-  "Deels (dakkapel, schoorsteen, boom)": 0.82,
-  Veel: 0.58,
-  "Weet ik niet": 0.88,
-};
-
 export function runScan(lead: Lead): ScanResult {
-  const digits = Number(lead.postcode.replace(/\D/g, "").slice(0, 4)) || 3500;
-  const orient = ORIENT[lead.roofDir ?? "Weet ik niet"];
-  const shade = SHADE_F[lead.shade ?? "Weet ik niet"];
-  const usage = lead.usageKwh && lead.usageKwh > 400 ? lead.usageKwh : 0;
-  const panels =
-    lead.product === "Thuisbatterij"
-      ? 0
-      : usage
-        ? Math.max(6, Math.min(20, Math.round((usage * 0.85) / 350)))
-        : 8 + (digits % 8);
-  const yieldKwh =
-    lead.product === "Thuisbatterij" ? 0 : Math.round(panels * 350 * orient * shade);
-  const batteryKwh =
-    lead.product === "Zonnepanelen" ? 0 : usage ? Math.max(5, Math.min(15, Math.round(usage / 900))) : 5 + (digits % 6);
-  const suitability: ScanResult["suitability"] =
-    lead.roofDir === "Noord / anders" || lead.shade === "Veel"
-      ? "nader te bekijken"
-      : orient * shade > 0.85
-        ? "sterk"
-        : orient * shade > 0.7
-          ? "kansrijk"
-          : "nader te bekijken";
+  const panels = null;
+  const yieldKwh = null;
+  const batteryKwh = null;
+  const suitability: ScanResult["suitability"] = "nader te bekijken";
   const region = regionLabel(lead.postcode);
   const matchHint =
     lead.product === "Thuisbatterij"
-      ? `In ${region} (${netbeheerder(lead.postcode)}) kijken we naar partners met batterij-ervaring en vrije capaciteit.`
-      : `In ${region} (${netbeheerder(lead.postcode)}) zoeken we één partner voor dak, omvormer en netaansluiting.`;
+      ? `We zoeken voor ${lead.postcode} een partner met batterij-ervaring en vrije capaciteit. Grootte, aansluiting en geschiktheid moeten nog worden beoordeeld.`
+      : `We zoeken voor ${lead.postcode} één partner voor je woning en wensen. Paneelaantal, opwek en aansluiting zijn nog niet vastgesteld.`;
   return {
     leadId: lead.id,
     region,
@@ -359,9 +336,9 @@ export function runScan(lead: Lead): ScanResult {
     batteryKwh,
     matchHint,
     nextSteps: [
-      "Dit rapport is de start — geen schouwing en geen offerte.",
+      "Deze intake is voorbereiding op een gesprek; geen technische berekening of offerte.",
       "De installateur rekent na op jouw dak, meter en net.",
-      "Plan daarna een gesprek vanuit je portaal.",
+      "Bespreek een moment met Matchdesk; een verzoek is nog geen bevestigde afspraak.",
     ],
   };
 }
@@ -387,7 +364,7 @@ export function buildFitReport(lead: Lead): FitReport {
 
   const installerAsk = [
     "Foto’s van dakvlakken, meterkast en (indien aanwezig) bestaande omvormer.",
-    `Netaansluiting bij ${operator}: teruglevercapaciteit en eventuele congestie op ${lead.postcode}.`,
+    `Controleer netbeheerder en netaansluiting op het exacte adres ${lead.postcode}; beoordeel ook terugleverbeperkingen.`,
     lead.meter === "1-fase"
       ? "1-fase aansluiting: max. omvormervermogen en eventuele 3-fase upgrade."
       : "Bevestig 1- of 3-fase en vrije groepen in de meterkast.",
@@ -399,7 +376,7 @@ export function buildFitReport(lead: Lead): FitReport {
 
   const risks: string[] = [];
   if (lead.shade === "Veel" || lead.shade?.startsWith("Deels")) {
-    risks.push("Schaduw op het dakvlak. Optimizer of herverdeling van strings is waarschijnlijk nodig.");
+    risks.push("Schaduw op het dakvlak: beoordeel opbrengst en ontwerp ter plaatse; deze intake schrijft geen optimizer of stringindeling voor.");
   }
   if (lead.roofDir === "Noord / anders") {
     risks.push("Noordelijk of afwijkend dakvlak: lagere opbrengst, extra uitleg richting klant.");
@@ -410,10 +387,10 @@ export function buildFitReport(lead: Lead): FitReport {
   if (lead.hasSolar) {
     risks.push("Bestaande installatie: omvormer, garantie en uitbreiding vs. vervanging checken.");
   }
-  if (lead.meter === "1-fase" && scan.panels >= 12) {
-    risks.push("Groot veld op 1-fase: begrensd vermogen of 3-fase upgrade bespreken.");
+  if (lead.meter === "1-fase") {
+    risks.push("1-fase aansluiting: beoordeel passend vermogen en eventuele aanpassing met de installateur.");
   }
-  risks.push(`Net: ${operator} in ${scan.region}. Terugleveren is geen zekerheid — installer checkt de aansluiting.`);
+  risks.push("Netbeheerder en mogelijkheden voor teruglevering zijn nog niet geverifieerd; de installateur controleert de concrete aansluiting.");
   if (lead.term === "Zo snel mogelijk") {
     risks.push("Krappe planning: materiaallevering en netwerkmelding bepalen de startdatum, niet alleen de wens.");
   }
@@ -429,8 +406,8 @@ export function buildFitReport(lead: Lead): FitReport {
     lead.meter ? `Meterkast: ${lead.meter}.` : "Meterkast onbekend.",
     lead.hasSolar ? "Er liggen al panelen." : "Geen bestaande panelen opgegeven.",
     lead.product === "Thuisbatterij"
-      ? `Richtgrootte batterij ${scan.batteryKwh} kWh — ter discussie, geen bestelling.`
-      : `Richtgrootte ${scan.panels} panelen / ${kwh(scan.yieldKwh)} — postcode + dakantwoorden, geen opbrengstgarantie.`,
+      ? "Batterijcapaciteit nog te bepalen op basis van verbruiksprofiel, bestaande installatie en wensen; geen automatisch advies uit de postcode."
+      : "Paneelaantal en opwek nog te bepalen na dakbeoordeling en technisch ontwerp; niet afgeleid uit een postcode of jaarverbruik alleen.",
     scan.matchHint,
   ];
   if (lead.note?.trim()) brief.push(`Toelichting klant: ${lead.note.trim()}`);

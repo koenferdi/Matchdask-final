@@ -27,7 +27,7 @@ const STEPS = [
   },
   {
     title: "Een zorgvuldige selectie",
-    body: "We kijken naar werkgebied, vakgebied, beoordeelde kwaliteit en beschikbare capaciteit.",
+    body: "We kijken naar werkgebied, vakgebied, toelating en beschikbare capaciteit.",
     icon: "/higgsfield/icon-quality.png",
   },
   {
@@ -44,15 +44,15 @@ const FAQ = [
   },
   {
     q: "Naar hoeveel bedrijven gaat mijn aanvraag?",
-    a: "Naar één passende installateur. We verspreiden je aanvraag niet over meerdere bedrijven.",
+    a: "Naar één passende installateur tegelijk, met jouw toestemming. Opnieuw matchen kan na vrijgave van de eerdere match en opnieuw jouw toestemming.",
   },
   {
     q: "Waar kijken jullie naar bij de match?",
-    a: "Naar je postcodegebied, het gewenste vakgebied, beoordeelde kwaliteit en de beschikbare capaciteit van een partner.",
+    a: "Naar je postcodegebied, het gewenste vakgebied, toelating en de beschikbare capaciteit van een partner.",
   },
   {
     q: "Hoe verdient Matchdesk aan een match?",
-    a: "Als huiseigenaar betaal je Matchdesk niets. Matchdesk ontvangt commissie van de installateur als de klus doorgaat — vaak (deels) vooraf: eerste gewonnen klus €0, daarna 10% van de dealwaarde (max. €400 bij panelen, €600 bij batterij/combi). Jouw prijs en voorwaarden spreek je rechtstreeks met de installateur af.",
+    a: "De intake en matchaanvraag zijn gratis. Voor nieuwe schriftelijke partnerafspraken ontvangt Matchdesk €175 voor zonnepanelen of €225 voor een thuisbatterij of oorspronkelijke combinatie, exclusief btw. Pas na oplevering én ontvangen klantbetaling. Eerdere afspraken blijven gelden. Je installatieprijs en voorwaarden spreek je rechtstreeks met de installateur af.",
   },
   {
     q: "Is er altijd een installateur beschikbaar?",
@@ -60,7 +60,7 @@ const FAQ = [
   },
   {
     q: "Kan ik een gesprek plannen?",
-    a: "Maak een aanvraag aan en kies daarna in je portaal een moment voor een telefonisch gesprek. Je ziet daar de status van je afspraak.",
+    a: "Maak een aanvraag aan en neem contact op met Matchdesk om een telefonisch gesprek af te spreken. Een verzoek is nog geen bevestigde afspraak.",
   },
 ];
 

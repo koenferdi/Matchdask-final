@@ -4,12 +4,10 @@
  * No filesystem and no Resend calls — the server adapter persists and sends.
  */
 import { createHash, randomBytes } from "node:crypto";
+import { COMMISSION_TEXT, COMMISSION_HTML, MATCH_SLA_TEXT } from "../commercial.mjs";
 
 export const ACTIVATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-export const COMMISSION_TEXT =
-  "Eerste gewonnen klus €0 commissie, daarna 10% (max €400 panelen / €600 batterij).";
-export const COMMISSION_HTML =
-  "Eerste gewonnen klus <strong>€0</strong> commissie, daarna <strong>10%</strong> (max €400 panelen / €600 batterij).";
+export { COMMISSION_TEXT, COMMISSION_HTML };
 
 export function emptyLedger() {
   return { byPartner: {}, sentKeys: {}, pendingJobs: [], outbox: [] };
@@ -107,6 +105,7 @@ export function renderActivationEmail({ greeting, company, activationUrl: url })
     p(
       "Na activatie ontvang je een aparte bevestiging. Daarna kun je exclusieve 1:1-aanvragen ontvangen — geen leadveiling.",
     ),
+    p(esc(MATCH_SLA_TEXT)),
     p(COMMISSION_HTML, true),
   ].join("\n    ");
   return {
@@ -126,6 +125,7 @@ export function renderActivationEmail({ greeting, company, activationUrl: url })
       "",
       "Na activatie ontvang je een aparte bevestiging. Daarna kun je exclusieve 1:1-aanvragen ontvangen — geen leadveiling.",
       "",
+      MATCH_SLA_TEXT,
       COMMISSION_TEXT,
     ]),
   };
@@ -140,6 +140,7 @@ export function renderConfirmationEmail({ greeting, company, portalUrl }) {
       `<strong>${safeCompany}</strong> is geactiveerd. Je kunt nu exclusieve 1:1-aanvragen ontvangen — geen leadveiling.`,
     ),
     p("Eén lead gaat naar één installateur."),
+    p(esc(MATCH_SLA_TEXT)),
     p(COMMISSION_HTML, true),
   ].join("\n    ");
   return {
@@ -157,6 +158,7 @@ export function renderConfirmationEmail({ greeting, company, portalUrl }) {
       "",
       "Eén lead gaat naar één installateur.",
       "",
+      MATCH_SLA_TEXT,
       COMMISSION_TEXT,
       "",
       `→ ${portalUrl}`,
@@ -182,6 +184,7 @@ export function renderJobEmail({ greeting, company, lead, portalUrl }) {
       `<strong>${esc(lead.product || "Klus")}</strong><br>${esc(place)}<br>Klant: ${esc(lead.name || "—")}<br>Dossier: ${esc(lead.id || "")}`,
     ),
     contact ? p(contact) : "",
+    p(esc(MATCH_SLA_TEXT)),
     p(COMMISSION_HTML, true),
   ]
     .filter(Boolean)
@@ -207,6 +210,7 @@ export function renderJobEmail({ greeting, company, lead, portalUrl }) {
       lead.email ? `E-mail: ${lead.email}` : "",
       lead.phone ? `Telefoon: ${lead.phone}` : "",
       "",
+      MATCH_SLA_TEXT,
       COMMISSION_TEXT,
       "",
       `→ ${portalUrl}`,
@@ -222,6 +226,7 @@ export function renderMessageEmail({ greeting, company, preview, portalUrl, doss
     p(esc(hello)),
     p(`Er staat een nieuw bericht klaar voor <strong>${esc(company)}</strong>${about}.`),
     p(esc(preview)),
+    p(esc(MATCH_SLA_TEXT)),
     p(`Eén lead, één installateur. ${COMMISSION_HTML}`, true),
   ].join("\n    ");
   return {
@@ -239,6 +244,7 @@ export function renderMessageEmail({ greeting, company, preview, portalUrl, doss
       "",
       preview,
       "",
+      MATCH_SLA_TEXT,
       `Eén lead, één installateur. ${COMMISSION_TEXT}`,
       "",
       `→ ${portalUrl}`,

@@ -15,15 +15,15 @@ export const ARTICLES: Article[] = [
     title: "Wat er in het Fit-rapport staat — en wat niet",
     kicker: "Woningscan",
     excerpt:
-      "Het rapport van €39 is geen offerte. Het is een dossier: dak, meter, verbruik en de vragen voor de schouwing. Zodat het eerste gesprek over de woning gaat.",
+      "Het Fit-rapport is voorbereiding op een gesprek, geen offerte. Nieuwe verkoop is gepauzeerd; bestaande leveringsafspraken blijven gelden.",
     date: "17 september 2026",
     read: "4 min",
     image: "/higgsfield/solar.webp",
     body: [
-      "Na de gratis woningscan kun je een Fit-rapport kopen. Dat is geen glossy brochure en geen belofte over euro’s op de jaarafrekening. Het is een overdracht naar één installateur.",
+      "De gratis woningintake helpt een gesprek voorbereiden. Nieuwe verkoop van het Fit-rapport is gepauzeerd. Bestaande aankopen worden volgens afspraak geleverd; voor toegang helpt Matchdesk na controle van de juiste ontvanger en betaling.",
       "Er staat in: adres en product, termijn, jaarverbruik als je dat invult, daktype en richting, schaduw, 1- of 3-fase, of er al panelen liggen, de netbeheerder bij jouw postcode, en de vragen die bij de schouwing horen.",
       "Er staat niet in: een bindende prijs, een gegarandeerde opbrengst, of de belofte dat er morgen iemand op het dak staat. Richtcijfers voor panelen of batterij zijn een startpunt. De installateur rekent na op jouw dak.",
-      "Vul dak en meter in — in de scan of achteraf op de rapportpagina. Hoe vollediger, hoe minder gissen in het eerste gesprek. Print het, of stuur de link mee.",
+      "Vul dak en meter zo volledig mogelijk in de intake in. Bespreek ontbrekende gegevens met de installateur. Een indicatie vervangt geen schouwing of technische berekening.",
     ],
   },
   {
@@ -31,15 +31,15 @@ export const ARTICLES: Article[] = [
     title: "Geverifieerde installateurs: keuring, geen veiling",
     kicker: "Voor bedrijven",
     excerpt:
-      "Exclusief-proof is geen advertentiebudget. Je betaalt voor een check. Alleen Actieve bedrijven staan op de publieke lijst — zonder voorbeeldnamen.",
+      "Alleen toegelaten, actieve bedrijven staan op de publieke lijst. Een afzonderlijke badgekeuring staat los van matching; nieuwe verkoop is gepauzeerd.",
     date: "17 september 2026",
     read: "4 min",
     image: "/higgsfield/installer.webp",
     body: [
       "Op Matchdesk staat geen catalogus van iedereen die een KvK-nummer heeft. De pagina geverifieerde installateurs toont alleen bedrijven die zijn toegelaten: Actief, geen voorbeeldprofiel.",
-      "Exclusief-proof (€149 early-bird) is de keuring: KvK, reviews, werkgebied, of je reageert. Slaagt die, dan de badge. Zakt hij, dan geen badge en geen publieke plek. We kopen je geen klussen.",
-      "Aanvragen blijven 1:1. De huiseigenaar betaalt Matchdesk niets. Commissie spreek je vooraf af, pas als de klus doorgaat.",
-      "Meld je bedrijf aan, maak een account, optioneel de keuring. Tot Matchdesk je op Actief zet, blijf je uit de lijst. Dat is bewust.",
+      "Nieuwe verkoop van Exclusief-proof is gepauzeerd. Eerder afgesproken keuringen worden uitgevoerd. Betaling geeft geen badge of toelating: dat vraagt een afzonderlijk positief besluit. Een badge is geen voorwaarde voor matching.",
+      "Aanvragen gaan met klanttoestemming naar één partner tegelijk. Bij nieuwe schriftelijke afspraken geldt €175 voor zonnepanelen of €225 voor een thuisbatterij of oorspronkelijke combinatie, exclusief btw, pas na oplevering én ontvangen klantbetaling. Bestaande afspraken blijven gelden.",
+      "Meld je bedrijf gratis aan. Matchdesk beoordeelt registratie, werkgebied en aansluiting en legt commerciële afspraken vast. Matching vraagt toelating en beschikbare capaciteit; een betaald product is daarvoor geen vereiste.",
     ],
   },
   {
@@ -53,7 +53,7 @@ export const ARTICLES: Article[] = [
     image: "/higgsfield/installer.webp",
     body: [
       "Wie zonnepanelen of een thuisbatterij overweegt, krijgt vaak hetzelfde advies: vraag drie offertes aan. Het klinkt zorgvuldig. Het leidt meestal tot drie gesprekken, drie aannames over je woning en drie prijzen die je niet kunt vergelijken.",
-      "Matchdesk werkt anders. Jij doet één aanvraag. Wij kijken naar postcode, vakgebied, beoordeelde kwaliteit en beschikbare capaciteit. Daarna gaat je aanvraag naar één passende installateur — niet naar een veiling.",
+      "Matchdesk werkt anders. Jij doet één aanvraag. Wij kijken naar postcode, vakgebied, toelating en beschikbare capaciteit. Daarna gaat je aanvraag naar één passende installateur — niet naar een veiling.",
       "Die installateur weet dat hij niet hoeft te undercutten. Jij weet dat je niet vijf keer hetzelfde verhaal hoeft te doen. Het eerste gesprek kan over de woning gaan, niet over wie het goedkoopst durft te beloven.",
       "Geen match is ook een antwoord. Als er in jouw regio geen partner past, blijft de aanvraag open. We sturen niets door tot jij om een match vraagt.",
     ],
@@ -87,7 +87,7 @@ export const ARTICLES: Article[] = [
       "Een goed eerste gesprek duurt geen uur langer. Het begint beter. Je installateur hoeft dan niet te gissen naar je verbruik, je termijn of of je alleen panelen wilt of ook een batterij.",
       "Zet klaar: je postcode, een recente jaarafrekening of slimme-meterstand, of je auto laadt, en wanneer je wilt starten. Een paar foto’s van het dak helpen meer dan een lange mail.",
       "De Matchdesk-woningscan bundelt dat tot een Fit-rapport. Geen belofte, wel een gedeeld startpunt. Je neemt het mee naar de installateur die bij jouw aanvraag past.",
-      "Plan daarna in je portaal een moment. Jij ziet de status. De installateur ook. Geen bcc naar drie bedrijven, geen ‘wie belt het eerst’.",
+      "Bespreek een moment met Matchdesk en daarna met de toegewezen installateur. Een verzoek is nog geen bevestigde afspraak. Je aanvraag gaat met toestemming naar één partner tegelijk.",
     ],
   },
   {
@@ -103,23 +103,23 @@ export const ARTICLES: Article[] = [
       "Matchdesk is een bemiddelingsplatform. Wij kiezen één passende installateur. Wij installeren niet, we geven geen technisch advies over jouw dak, en we tekenen geen overeenkomst met jou voor het werk.",
       "We beloven geen besparing in euro’s of kWh. Die hangt af van jouw woning, tarieven, teruglevering en hoe de installatie wordt uitgevoerd. Dat hoort bij het gesprek met de installateur — niet bij een website.",
       "We beloven ook geen beschikbaarheid in elke postcode. Past er niemand, dan blijft de aanvraag open. Liever geen match dan een verkeerde.",
-      "Wat we wél doen: zorgvuldig selecteren op werkgebied, vakgebied, beoordeelde kwaliteit en capaciteit. En pas doorzetten als jij om een match vraagt.",
+      "Wat we wél doen: zorgvuldig selecteren op werkgebied, vakgebied, toelating en capaciteit. En pas doorzetten als jij om een match vraagt.",
     ],
   },
   {
     slug: "exclusief-proof-wat-je-koopt",
-    title: "Exclusief-proof: wat je als installateur wél koopt",
+    title: "Exclusief-proof: wat een bestaande keuring betekent",
     kicker: "Voor bedrijven",
     excerpt:
-      "Early-bird €149 is geen advertentiebudget en geen garantie op klussen. Het is een jaarlijkse keuring: KvK, reviews, respons. Daarna een badge — of niet.",
+      "Nieuwe verkoop is gepauzeerd. Bestaande keuringen worden volgens afspraak uitgevoerd; betaling geeft geen automatische badge of garantie op opdrachten.",
     date: "1 september 2026",
     read: "4 min",
     image: "/higgsfield/installer.webp",
     body: [
-      "Exclusief-proof is de kwaliteitscheck voor Actieve Matchdesk-partners. Je betaalt voor de keuring, niet voor een plaats in een veiling. We kijken naar KvK, reviews en of je reageert.",
+      "Een eerder afgesproken Exclusief-proof-keuring beoordeelt de afgesproken aspecten, zoals KvK, referenties en respons. Nieuwe verkoop is gepauzeerd. Matching en toelating staan los van een badgeaankoop.",
       "Slaagt de check, dan mag je de badge ‘Exclusief partner gecontroleerd door Matchdesk’. Zakt hij, dan geen badge. We kopen je geen leads.",
-      "De commissie blijft los: eerste gewonnen klus €0, daarna 10% van de afgesproken grondslag, standaard exclusief btw (max. €400 bij panelen, €600 bij batterij of combi). Commissie alleen als de opdracht als gewonnen is bevestigd. De huiseigenaar betaalt Matchdesk niets.",
-      "Early-bird €149 is voor wie nu instapt. Geen belofte op volume. Wel een helder keurmerk voor wie 1:1-aanvragen in het eigen werkgebied wil, zonder drie concurrenten in cc.",
+      "Voor nieuwe schriftelijke afspraken is de succesfee €175 voor zonnepanelen of €225 voor een thuisbatterij of oorspronkelijke combinatie, exclusief btw. Eén oorspronkelijke opdracht, één fee; geen fee over later meerwerk. Pas na oplevering én ontvangen klantbetaling, met een factuurtermijn van zeven dagen. Bestaande afspraken en gratis toezeggingen blijven gelden.",
+      "Bij vragen over een eerder gekochte keuring helpt Matchdesk met controle en levering. Betaal niet opnieuw. Een badge geeft geen voorrang bij matching, territoriaal alleenrecht of omzetgarantie.",
     ],
   },
 ];
