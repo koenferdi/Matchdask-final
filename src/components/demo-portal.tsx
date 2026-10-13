@@ -67,7 +67,7 @@ function Woning({ step, setStep }: { step: number; setStep: (n: number) => void 
       </ol>
       <ul className="mt-5 space-y-2 text-sm text-mint/80">
         {step === 0 ? (
-          <Line>Aanvraag staat klaar. Nog geen installateur — jij vraagt de match aan.</Line>
+          <Line>Aanvraag staat klaar. Nog geen installateur. Jij vraagt de match aan.</Line>
         ) : null}
         {step >= 1 ? <Line>Gekoppeld aan één installateur in Utrecht (fictief: Helderdak).</Line> : null}
         {step >= 2 ? <Line>Gesprek gepland: dinsdag 10:00 · telefonisch.</Line> : null}

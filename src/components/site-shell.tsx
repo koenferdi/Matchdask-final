@@ -164,11 +164,11 @@ export function SiteShell() {
               WhatsApp <ArrowUpRight className="size-4" />
             </a>
             <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
-            <span>Matchdesk · KvK {CONTACT.kvk}</span>
+            <span>Matchdesk · onderdeel van KC Enterprise · KvK {CONTACT.kvk}</span>
           </FooterCol>
         </div>
         <div className={cn("mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-5 py-6 text-xs md:flex-row md:items-center md:justify-between md:px-16", dark ? "text-mint/50" : "text-muted")}>
-          <span>© {new Date().getFullYear()} Matchdesk · KvK {CONTACT.kvk}</span>
+          <span>© {new Date().getFullYear()} Matchdesk · onderdeel van KC Enterprise · KvK {CONTACT.kvk}</span>
           <span>De installateur is jouw contractpartij.</span>
           <span className="flex gap-3">
             <Link to="/privacy">Privacy</Link>

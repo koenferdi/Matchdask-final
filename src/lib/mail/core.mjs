@@ -7,9 +7,9 @@ import { createHash, randomBytes } from "node:crypto";
 
 export const ACTIVATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const COMMISSION_TEXT =
-  "Eerste gewonnen klus €0 commissie, daarna 10% (max €400 panelen / €600 batterij).";
+  "Eerste gewonnen klus €0 commissie, daarna vast €225 per thuisbatterij-klus en €175 per zonnepanelen-klus (founding-tarief, excl. btw).";
 export const COMMISSION_HTML =
-  "Eerste gewonnen klus <strong>€0</strong> commissie, daarna <strong>10%</strong> (max €400 panelen / €600 batterij).";
+  "Eerste gewonnen klus <strong>€0</strong> commissie, daarna vast <strong>€225</strong> per thuisbatterij-klus en <strong>€175</strong> per zonnepanelen-klus (founding-tarief, excl. btw).";
 
 export function emptyLedger() {
   return { byPartner: {}, sentKeys: {}, pendingJobs: [], outbox: [] };

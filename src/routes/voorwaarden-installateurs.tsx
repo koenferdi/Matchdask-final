@@ -30,10 +30,10 @@ function VoorwaardenInstallateurs() {
           </p>
           <h2>Commissie</h2>
           <p>
-            Eerste gewonnen klus via Matchdesk: <strong>€0</strong>. Daarna <strong>10%</strong> van de afgesproken grondslag, tot max. <strong>€400</strong> bij panelen en <strong>€600</strong> bij batterij of combinatie. Geen abonnement.
+            Founding-tarief: eerste gewonnen klus via Matchdesk <strong>€0</strong>. Daarna een vast bedrag per gewonnen klus: <strong>€225</strong> per batterijklus en <strong>€175</strong> per zonnepanelenklus, exclusief btw. Dit tarief geldt voor partners die voor 31 december 2026 tekenen en is geldig tot en met 30 juni 2027. Geen abonnement.
           </p>
           <p>
-            Commissie rekenen we over de grondslag (standaard exclusief btw). Leg de offertewaarde vast voordat een opdracht als gewonnen wordt bevestigd. Een andere btw-afspraak geldt alleen als die schriftelijk is vastgelegd, en eveneens vóór die bevestiging.
+            Alle bedragen zijn exclusief btw. Een andere afspraak geldt alleen als die schriftelijk is vastgelegd, vóór de bevestiging van de opdracht.
           </p>
           <h2>Annulering</h2>
           <p>
