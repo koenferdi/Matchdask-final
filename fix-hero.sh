@@ -17,6 +17,7 @@ files=(
   src/components/marketing/partner-commercial.tsx
   src/components/marketing/soft-launch-west-brabant.tsx
   src/components/ui/button.tsx
+  src/components/marketing/partner-commercial.tsx
   src/styles.css
   src/lib/matchdesk.ts
   src/lib/store.ts
@@ -45,6 +46,8 @@ files=(
   src/routes/voorwaarden.tsx
   src/routes/voorwaarden-installateurs.tsx
   src/routes/privacy.tsx
+  src/routes/voorwaarden.tsx
+  src/routes/voorwaarden-installateurs.tsx
   src/routes/cookies.tsx
   src/routes/api/workspace.ts
   src/routes/api/partner/gate.ts

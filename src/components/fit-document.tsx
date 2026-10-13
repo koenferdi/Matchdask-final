@@ -22,7 +22,7 @@ export function FitDocument({ lead, sample = false }: { lead: Lead; sample?: boo
           <p className="mt-1 text-sm text-mint/70">Voor de installateur · geen offerte</p>
         </div>
         <div className="text-right text-xs text-mint/70">
-          <p>Matchdesk · KvK {CONTACT.kvk}</p>
+          <p>Matchdesk · onderdeel van KC Enterprise · KvK {CONTACT.kvk}</p>
           <p>{CONTACT.email}</p>
           <p>Uitgegeven {issued}</p>
         </div>
