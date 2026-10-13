@@ -52,7 +52,7 @@ const FAQ = [
   },
   {
     q: "Hoe verdient Matchdesk aan een match?",
-    a: "Als huiseigenaar betaal je Matchdesk niets. Matchdesk ontvangt commissie van de installateur als de klus doorgaat — vaak (deels) vooraf: eerste gewonnen klus €0, daarna 10% van de dealwaarde (max. €400 bij panelen, €600 bij batterij/combi). Jouw prijs en voorwaarden spreek je rechtstreeks met de installateur af.",
+    a: "Als huiseigenaar betaal je Matchdesk niets. Matchdesk ontvangt alleen een vast bedrag van de installateur als de opdracht als gewonnen is bevestigd. Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027. Jouw prijs en voorwaarden spreek je rechtstreeks met de installateur af.",
   },
   {
     q: "Is er altijd een installateur beschikbaar?",
@@ -329,7 +329,7 @@ function Home() {
               Geen ruis.
             </h2>
             <p className="mt-4 max-w-md text-mint/70">
-              Matching, batterijen en het eerste gesprek — zonder beloftes die een installateur niet kan waarmaken.
+              Matching, batterijen en het eerste gesprek, zonder beloftes die een installateur niet kan waarmaken.
             </p>
             <div className="mt-10 grid gap-6">
               {ARTICLES.map((a) => (

@@ -78,7 +78,7 @@ function Installateurs() {
             <div className="mt-4 border-t border-line pt-4">
               <strong className="text-[15px]">Commissie alleen als de opdracht gewonnen is.</strong>
               <p className="mt-2 text-[13px] text-muted">
-                Eerste gewonnen klus €0, daarna 10% van de grondslag, standaard exclusief btw. Een match is geen garantie op een opdracht.
+                Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027. Een match is geen garantie op een opdracht.
               </p>
             </div>
           </div>

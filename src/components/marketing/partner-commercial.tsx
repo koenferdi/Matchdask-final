@@ -6,7 +6,7 @@ export function PartnerCommercialFacts() {
     <div>
       <ul className="mt-3 list-disc space-y-2 pl-5">
         <li>Na een matchmelding heb je 48 uur om te accepteren of te weigeren. Zonder reactie mag Matchdesk één andere partner zoeken. Per aanvraag blijft het 1:1.</li>
-        <li>Eerste gewonnen klus: €0. Daarna 10% van de afgesproken grondslag, standaard exclusief btw (max. €400 panelen, €600 batterij of combinatie). Geen abonnement.</li>
+        <li>Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw. Geldt voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027. Geen abonnement.</li>
         <li>Commissie alleen als de opdracht als gewonnen is bevestigd. Annuleert de klant daarna, dan blijft die commissie niet automatisch verschuldigd. Afwijking alleen schriftelijk.</li>
         <li>Soft launch West-Brabant: maximaal 8 partnerplekken. Dat is startcapaciteit, geen alleenrecht op Breda.</li>
         <li>Aanmelden en je profiel zijn gratis, zonder lock-in. Na toelating (de Gate) beheer je in het bedrijfsportaal zelf Actief of pauze, en je capaciteit.</li>
