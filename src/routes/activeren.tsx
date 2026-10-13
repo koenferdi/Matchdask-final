@@ -145,7 +145,7 @@ function ActiverenPage() {
           {view.state === "klaar" ? (
             <div className="mt-6 space-y-4">
               <p className="text-sm text-muted">
-                Eerste gewonnen klus €0 commissie, daarna 10% (max €400 panelen / €600 batterij).
+                Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027.
               </p>
               <Button type="button" onClick={() => void confirm()} disabled={busy}>
                 {busy ? "Bezig…" : "Activeer account"}

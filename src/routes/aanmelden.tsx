@@ -50,7 +50,7 @@ function Aanmelden() {
               </div>
               <h2 className="text-3xl">Je aanmelding is binnen.</h2>
               <p className="mt-3 text-muted">
-                Er gaat nu nog geen activatiemail uit. Die volgt nadat KvK en werkgebied kloppen. Eén lead, één installateur. Na een matchmelding heb je 48 uur om te accepteren of te weigeren. Eerste gewonnen klus €0, daarna 10% van de grondslag, standaard exclusief btw (max. €400 panelen, €600 batterij of combinatie).
+                Er gaat nu nog geen activatiemail uit. Die volgt nadat KvK en werkgebied kloppen. Eén lead, één installateur. Na een matchmelding heb je 48 uur om te accepteren of te weigeren. Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027.
               </p>
               <p className="mt-3 text-sm">
                 <Link to="/voorwaarden-installateurs" className="font-semibold text-teal">
