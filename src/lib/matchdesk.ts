@@ -444,6 +444,7 @@ export function buildFitReport(lead: Lead): FitReport {
  * Superset shape: one-off products + founding-tarief success fees per product.
  */
 export const PRICES_EUR = {
+  report: 39,
   woningscan: 39,
   woningrapport: 39,
   exclusief: 149,
