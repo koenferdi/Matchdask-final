@@ -68,10 +68,17 @@ const root = process.argv[3]; const bakRoot = process.argv[4];
 const exts = /\.(tsx?|mjs|js|jsx|md|html|txt)$/;
 const leftovers = [/10% van de (afgesproken )?(grondslag|dealwaarde)/, /max\.? ?(<strong>)?€400/, /€600 (bij )?batterij/, /daarna (<strong>)?10%/];
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => { const p = path.join(d, e.name); return e.isDirectory() ? (e.name === "node_modules" ? [] : walk(p)) : exts.test(e.name) ? [p] : []; });
+const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+for (const [a, b] of [
+  ["Eerste gewonnen klus via Matchdesk: €0. Daarna 10% van de dealwaarde, tot max. €400 bij panelen en €600 bij batterij of combinatie. Geen abonnement.",
+   "Eerste gewonnen klus via Matchdesk: €0. Daarna een vast bedrag per gewonnen klus: €225 bij een thuisbatterij en €175 bij zonnepanelen, exclusief btw (founding-tarief voor partners die vóór 31-12-2026 tekenen, geldig tot 30-06-2027). Geen abonnement."],
+  ["De commissie blijft los: eerste gewonnen klus €0, daarna 10% van de dealwaarde (max. €400 bij panelen, €600 bij batterij of combi). Dat spreek je vooraf af. De huiseigenaar betaalt Matchdesk niets.",
+   "De commissie blijft los: eerste gewonnen klus €0, daarna een vast bedrag per gewonnen klus (€225 bij een thuisbatterij, €175 bij zonnepanelen, excl. btw). Dat spreek je vooraf af. De huiseigenaar betaalt Matchdesk niets."],
+]) pairs.push([new RegExp(esc(a), "g"), b]);
 let changed = 0;
 for (const f of walk(root)) {
   const orig = fs.readFileSync(f, "utf8"); let s = orig; const hits = [];
-  for (const [a, b] of pairs) if (s.includes(a)) { s = s.split(a).join(b); hits.push(a.slice(0, 70)); }
+  for (const [a, b] of pairs) { if (a instanceof RegExp) { if (a.test(s)) { a.lastIndex = 0; s = s.replace(a, () => b); hits.push(a.source.replace(/\\s\+/g, " ").slice(0, 70)); } } else if (s.includes(a)) { s = s.split(a).join(b); hits.push(a.slice(0, 70)); } }
   if (s !== orig) {
     const bak = path.join(bakRoot, path.relative(root, f)); fs.mkdirSync(path.dirname(bak), { recursive: true }); fs.copyFileSync(f, bak);
     fs.writeFileSync(f, s); changed++;
@@ -84,6 +91,8 @@ PATCHJS
 BAK="$NEW/.pricing-backup-$STAMP"
 node "$TMP/patch.mjs" "$TMP/pairs.json" "$NEW/src" "$BAK" || fail "pricing patch"
 echo "(originals backed up in $BAK)"
+echo "== leftover old pricing in src (if any)"
+grep -rnE --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.js' --include='*.jsx' '10% van de (dealwaarde|grondslag)' "$NEW/src" || echo "none"
 echo "== reuse node_modules"
 [[ -d node_modules ]] || fail "no node_modules in copied release"
 echo "== repair broken node_modules/.bin symlinks"
