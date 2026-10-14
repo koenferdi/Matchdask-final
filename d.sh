@@ -81,6 +81,18 @@ let changed = 0;
 for (const f of walk(root)) {
   const orig = fs.readFileSync(f, "utf8"); let s = orig; const hits = [];
   for (const [a, b] of pairs) { if (a instanceof RegExp) { if (a.test(s)) { a.lastIndex = 0; s = s.replace(a, () => b); hits.push(a.source.replace(/\\s\+/g, " ").slice(0, 70)); } } else if (s.includes(a)) { s = s.split(a).join(b); hits.push(a.slice(0, 70)); } }
+  const REPL = "een vast bedrag per gewonnen klus (€225 thuisbatterij, €175 zonnepanelen, excl. btw)";
+  const CAP = String.raw`(?:tot\s+)?(?:max\.?|maximaal)\s*€\s*400[^.<"'${"`"}{}()]*`;
+  const generic = [
+    [new RegExp(String.raw`10%\s+(?:van\s+de\s+)?(?:afgesproken\s+)?(?:grondslag|dealwaarde)(?:,?\s*standaard\s+exclusief\s+btw)?(?:\s*\(\s*${CAP}\)|[,;]?\s*${CAP})?`, "gi"), REPL],
+    [new RegExp(String.raw`\s*\(\s*${CAP}\)|[,;]?\s*${CAP}`, "gi"), ""],
+    [/(daarna)\s+10%(?!\s*<)/gi, (m, d) => d + " " + REPL],
+  ];
+  for (const [re, rep] of generic) s = s.replace(re, (m, ...rest) => {
+    const at = rest[rest.length - 2], src = rest[rest.length - 1];
+    console.log("GENERIC " + path.relative(root, f) + "\n   before: " + JSON.stringify(src.slice(Math.max(0, at - 50), at + m.length + 30)) + "\n   after:  " + JSON.stringify(src.slice(Math.max(0, at - 50), at) + (typeof rep === "function" ? rep(m, ...rest) : rep) + src.slice(at + m.length, at + m.length + 30)));
+    return typeof rep === "function" ? rep(m, ...rest) : rep;
+  });
   if (s !== orig) {
     const bak = path.join(bakRoot, path.relative(root, f)); fs.mkdirSync(path.dirname(bak), { recursive: true }); fs.copyFileSync(f, bak);
     fs.writeFileSync(f, s); changed++;
