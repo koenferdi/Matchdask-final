@@ -66,7 +66,7 @@ import fs from "node:fs"; import path from "node:path";
 const pairs = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const root = process.argv[3]; const bakRoot = process.argv[4];
 const exts = /\.(tsx?|mjs|js|jsx|md|html|txt)$/;
-const leftovers = [/10% van de (afgesproken )?(grondslag|dealwaarde)/, /max\.? ?(<strong>)?€400/, /€600 (bij )?batterij/, /daarna (<strong>)?10%/];
+const leftovers = [/10% van de (afgesproken )?(grondslag|dealwaarde)/, /maximaal\s+€400/, /max\.? ?(<strong>)?€400/, /€600 (bij )?batterij/, /daarna (<strong>)?10%/];
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => { const p = path.join(d, e.name); return e.isDirectory() ? (e.name === "node_modules" ? [] : walk(p)) : exts.test(e.name) ? [p] : []; });
 const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
 for (const [a, b] of [
@@ -74,6 +74,8 @@ for (const [a, b] of [
    "Eerste gewonnen klus via Matchdesk: €0. Daarna een vast bedrag per gewonnen klus: €225 bij een thuisbatterij en €175 bij zonnepanelen, exclusief btw (founding-tarief voor partners die vóór 31-12-2026 tekenen, geldig tot 30-06-2027). Geen abonnement."],
   ["De commissie blijft los: eerste gewonnen klus €0, daarna 10% van de dealwaarde (max. €400 bij panelen, €600 bij batterij of combi). Dat spreek je vooraf af. De huiseigenaar betaalt Matchdesk niets.",
    "De commissie blijft los: eerste gewonnen klus €0, daarna een vast bedrag per gewonnen klus (€225 bij een thuisbatterij, €175 bij zonnepanelen, excl. btw). Dat spreek je vooraf af. De huiseigenaar betaalt Matchdesk niets."],
+  ["daarna geldt 10% van de afgesproken grondslag, maximaal €400 voor panelen en €600 voor batterij/combinatie",
+   "daarna geldt een vast bedrag per gewonnen klus: €225 voor een thuisbatterij en €175 voor zonnepanelen, exclusief btw"],
 ]) pairs.push([new RegExp(esc(a), "g"), b]);
 let changed = 0;
 for (const f of walk(root)) {
@@ -92,7 +94,7 @@ BAK="$NEW/.pricing-backup-$STAMP"
 node "$TMP/patch.mjs" "$TMP/pairs.json" "$NEW/src" "$BAK" || fail "pricing patch"
 echo "(originals backed up in $BAK)"
 echo "== leftover old pricing in src (if any)"
-grep -rnE --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.js' --include='*.jsx' '10% van de (dealwaarde|grondslag)' "$NEW/src" || echo "none"
+grep -rnE --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.js' --include='*.jsx' '10% van de (afgesproken )?(dealwaarde|grondslag)|maximaal[[:space:]]+€400' "$NEW/src" || echo "none"
 echo "== reuse node_modules"
 [[ -d node_modules ]] || fail "no node_modules in copied release"
 echo "== repair broken node_modules/.bin symlinks"
@@ -114,7 +116,7 @@ echo "== sanity"
 [[ -f .output/server/index.mjs || -f .output/server/index.js ]] || fail "no .output/server/index"
 grep -rqs '225' .output/public || fail "'225' not in build"
 if grep -rqs '10% van de dealwaarde' .output/public .output/server; then fail "old '10% van de dealwaarde' still in build"; fi
-for pat in 'max. €400' '€600 batterij' '€600 bij batterij'; do
+for pat in 'max. €400' '€600 batterij' '€600 bij batterij' '10% van de afgesproken grondslag' 'maximaal €400'; do
   if grep -rqsF "$pat" .output/public .output/server; then fail "old cap text '$pat' still in build"; fi
 done
 chown -R root:root "$NEW"; chmod -R a+rX "$NEW"
