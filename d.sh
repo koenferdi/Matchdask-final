@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Matchdesk safe deploy: curl -sL https://raw.githubusercontent.com/koenferdi/Matchdask-final/main/d.sh | sudo bash
-# Repo is an overlay (src/, public/), not a full app: new release = copy of current release + repo overlay.
+# New release = copy of current release + targeted pricing-text replacement in its own src/ (no repo overlay: live src diverges).
 set -euo pipefail
 fail(){ echo "ERROR: $*"; echo FAILED; exit 1; }
 [[ "$(id -u)" -eq 0 ]] || fail "run as root"
@@ -12,17 +12,78 @@ CUR=$(systemctl show -p WorkingDirectory --value matchdesk)
 [[ -n "$CUR" && -f "$CUR/package.json" ]] || fail "current release not found ($CUR)"
 echo "current: $CUR"; echo "new: $NEW"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
-echo "== download main"
-curl -fsSL https://codeload.github.com/koenferdi/Matchdask-final/tar.gz/refs/heads/main -o "$TMP/src.tgz" || fail "download"
-mkdir "$TMP/x"; tar xzf "$TMP/src.tgz" -C "$TMP/x" --strip-components=1
-[[ -d "$TMP/x/src" ]] || fail "no src/ in tarball"
 echo "== copy current release (incl. node_modules, untracked runtime files)"
 cp -a "$CUR" "$NEW"
 rm -rf "$NEW/.output"
-echo "== overlay src/ public/ from repo"
-cp -a "$TMP/x/src/." "$NEW/src/"
-cp -a "$TMP/x/public/." "$NEW/public/"
+echo "== targeted pricing-text patch of the live release's own src (no file overlay)"
 cd "$NEW"
+cat > "$TMP/pairs.json" <<'PRICEJSON'
+[
+[
+"a: \"Als huiseigenaar betaal je Matchdesk niets. Matchdesk ontvangt commissie van de installateur als de klus doorgaat — vaak (deels) vooraf: eerste gewonnen klus €0, daarna 10% van de dealwaarde (max. €400 bij panelen, €600 bij batterij/combi). Jouw prijs en voorwaarden spreek je rechtstreeks met de installateur af.\",",
+"a: \"Als huiseigenaar betaal je Matchdesk niets. Matchdesk ontvangt alleen een vast bedrag van de installateur als de opdracht als gewonnen is bevestigd. Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027. Jouw prijs en voorwaarden spreek je rechtstreeks met de installateur af.\","
+],
+[
+"Er gaat nu nog geen activatiemail uit. Die volgt nadat KvK en werkgebied kloppen. Eén lead, één installateur. Na een matchmelding heb je 48 uur om te accepteren of te weigeren. Eerste gewonnen klus €0, daarna 10% van de grondslag, standaard exclusief btw (max. €400 panelen, €600 batterij of combinatie).",
+"Er gaat nu nog geen activatiemail uit. Die volgt nadat KvK en werkgebied kloppen. Eén lead, één installateur. Na een matchmelding heb je 48 uur om te accepteren of te weigeren. Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027."
+],
+[
+"\"De commissie blijft los: eerste gewonnen klus €0, daarna 10% van de afgesproken grondslag, standaard exclusief btw (max. €400 bij panelen, €600 bij batterij of combi). Commissie alleen als de opdracht als gewonnen is bevestigd. De huiseigenaar betaalt Matchdesk niets.\",",
+"\"De commissie blijft los: eerste gewonnen klus €0, daarna een vast bedrag per gewonnen klus (founding-tarief: €225 per batterijklus, €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027). Commissie alleen als de opdracht als gewonnen is bevestigd. De huiseigenaar betaalt Matchdesk niets.\","
+],
+[
+"Commissie rekenen we over de grondslag (standaard exclusief btw). Leg de offertewaarde vast voordat een opdracht als gewonnen wordt bevestigd. Een andere btw-afspraak geldt alleen als die schriftelijk is vastgelegd, en eveneens vóór die bevestiging.",
+"Alle bedragen zijn exclusief btw. Een andere afspraak geldt alleen als die schriftelijk is vastgelegd, vóór de bevestiging van de opdracht."
+],
+[
+"Eerste gewonnen klus via Matchdesk: <strong>€0</strong>. Daarna <strong>10%</strong> van de afgesproken grondslag, tot max. <strong>€400</strong> bij panelen en <strong>€600</strong> bij batterij of combinatie. Geen abonnement.",
+"Founding-tarief: eerste gewonnen klus via Matchdesk <strong>€0</strong>. Daarna een vast bedrag per gewonnen klus: <strong>€225</strong> per batterijklus en <strong>€175</strong> per zonnepanelenklus, exclusief btw. Dit tarief geldt voor partners die voor 31 december 2026 tekenen en is geldig tot en met 30 juni 2027. Geen abonnement."
+],
+[
+"<li>Eerste gewonnen klus: €0. Daarna 10% van de afgesproken grondslag, standaard exclusief btw (max. €400 panelen, €600 batterij of combinatie). Geen abonnement.</li>",
+"<li>Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw. Geldt voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027. Geen abonnement.</li>"
+],
+[
+"Eerste gewonnen klus €0, daarna 10% van de grondslag, standaard exclusief btw. Een match is geen garantie op een opdracht.",
+"Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027. Een match is geen garantie op een opdracht."
+],
+[
+"\"Eerste gewonnen klus <strong>€0</strong> commissie, daarna <strong>10%</strong> (max €400 panelen / €600 batterij).\";",
+"\"Eerste gewonnen klus <strong>€0</strong> commissie, daarna vast <strong>€225</strong> per thuisbatterij-klus en <strong>€175</strong> per zonnepanelen-klus (founding-tarief, excl. btw).\";"
+],
+[
+"\"Eerste gewonnen klus €0 commissie, daarna 10% (max €400 panelen / €600 batterij).\";",
+"\"Eerste gewonnen klus €0 commissie, daarna vast €225 per thuisbatterij-klus en €175 per zonnepanelen-klus (founding-tarief, excl. btw).\";"
+],
+[
+"Eerste gewonnen klus €0 commissie, daarna 10% (max €400 panelen / €600 batterij).",
+"Founding-tarief: eerste gewonnen klus €0, daarna €225 per batterijklus en €175 per zonnepanelenklus, exclusief btw, voor partners die voor 31 december 2026 tekenen, geldig tot en met 30 juni 2027."
+]
+]
+PRICEJSON
+cat > "$TMP/patch.mjs" <<'PATCHJS'
+import fs from "node:fs"; import path from "node:path";
+const pairs = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+const root = process.argv[3]; const bakRoot = process.argv[4];
+const exts = /\.(tsx?|mjs|js|jsx|md|html|txt)$/;
+const leftovers = [/10% van de (afgesproken )?(grondslag|dealwaarde)/, /max\.? ?(<strong>)?€400/, /€600 (bij )?batterij/, /daarna (<strong>)?10%/];
+const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => { const p = path.join(d, e.name); return e.isDirectory() ? (e.name === "node_modules" ? [] : walk(p)) : exts.test(e.name) ? [p] : []; });
+let changed = 0;
+for (const f of walk(root)) {
+  const orig = fs.readFileSync(f, "utf8"); let s = orig; const hits = [];
+  for (const [a, b] of pairs) if (s.includes(a)) { s = s.split(a).join(b); hits.push(a.slice(0, 70)); }
+  if (s !== orig) {
+    const bak = path.join(bakRoot, path.relative(root, f)); fs.mkdirSync(path.dirname(bak), { recursive: true }); fs.copyFileSync(f, bak);
+    fs.writeFileSync(f, s); changed++;
+    console.log("CHANGED " + path.relative(root, f)); for (const h of hits) console.log("   - " + h + "...");
+  }
+  for (const r of leftovers) { const m = s.match(r); if (m) console.log("WARN old pricing text left in " + path.relative(root, f) + ": " + JSON.stringify(s.slice(Math.max(0, m.index - 60), m.index + 80))); }
+}
+console.log("files changed: " + changed);
+PATCHJS
+BAK="$NEW/.pricing-backup-$STAMP"
+node "$TMP/patch.mjs" "$TMP/pairs.json" "$NEW/src" "$BAK" || fail "pricing patch"
+echo "(originals backed up in $BAK)"
 echo "== reuse node_modules"
 [[ -d node_modules ]] || fail "no node_modules in copied release"
 echo "== repair broken node_modules/.bin symlinks"
@@ -44,6 +105,9 @@ echo "== sanity"
 [[ -f .output/server/index.mjs || -f .output/server/index.js ]] || fail "no .output/server/index"
 grep -rqs '225' .output/public || fail "'225' not in build"
 if grep -rqs '10% van de dealwaarde' .output/public .output/server; then fail "old '10% van de dealwaarde' still in build"; fi
+for pat in 'max. €400' '€600 batterij' '€600 bij batterij'; do
+  if grep -rqsF "$pat" .output/public .output/server; then fail "old cap text '$pat' still in build"; fi
+done
 chown -R root:root "$NEW"; chmod -R a+rX "$NEW"
 [[ -d /var/lib/matchdesk ]] && chown -R www-data:www-data /var/lib/matchdesk || true
 [[ -d /opt/matchdesk/data ]] && chown -R www-data:www-data /opt/matchdesk/data || true
