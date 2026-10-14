@@ -23,8 +23,8 @@ echo "== overlay src/ public/ from repo"
 cp -a "$TMP/x/src/." "$NEW/src/"
 cp -a "$TMP/x/public/." "$NEW/public/"
 cd "$NEW"
-echo "== npm ci"
-if [[ -f package-lock.json ]]; then npm ci --omit=optional || npm ci || fail "npm ci"; else npm install || fail "npm install"; fi
+echo "== reuse node_modules"
+[[ -d node_modules ]] || fail "no node_modules in copied release"
 echo "== build"
 set -a; . /etc/matchdesk.env; set +a
 export MATCHDESK_VPS=1 VITE_AUTH_ENABLED=true VITE_NATIVE_GOOGLE=true
