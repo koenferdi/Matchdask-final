@@ -25,6 +25,13 @@ cp -a "$TMP/x/public/." "$NEW/public/"
 cd "$NEW"
 echo "== reuse node_modules"
 [[ -d node_modules ]] || fail "no node_modules in copied release"
+echo "== repair broken node_modules/.bin symlinks"
+for l in node_modules/.bin/*; do
+  [[ -L "$l" && ! -e "$l" ]] || continue
+  t=$(readlink "$l"); rel=${t##*/node_modules/}
+  if [[ "$t" == */node_modules/* && -e "node_modules/$rel" ]]; then ln -sfn "../$rel" "$l"; echo "fixed $l -> ../$rel"; else echo "WARN: broken $l -> $t"; fi
+done
+[[ -f node_modules/vite/bin/vite.js ]] && ln -sfn ../vite/bin/vite.js node_modules/.bin/vite
 echo "== build"
 set -a; . /etc/matchdesk.env; set +a
 export MATCHDESK_VPS=1 VITE_AUTH_ENABLED=true VITE_NATIVE_GOOGLE=true

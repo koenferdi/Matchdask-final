@@ -437,3 +437,23 @@ export function buildFitReport(lead: Lead): FitReport {
 
   return { scan, operator, installerAsk, risks, brief, missing };
 }
+
+/**
+ * Prices in whole euros (ex btw for partner fees). Kept for server-only modules
+ * (e.g. src/lib/stripe.server.ts on the VPS) that import PRICES_EUR.
+ * Superset shape: one-off products + founding-tarief success fees per product.
+ */
+export const PRICES_EUR = {
+  woningscan: 39,
+  woningrapport: 39,
+  exclusief: 149,
+  battery: 225,
+  panels: 175,
+  thuisbatterij: 225,
+  zonnepanelen: 175,
+  Thuisbatterij: 225,
+  Zonnepanelen: 175,
+  "Zonnepanelen + thuisbatterij": 225,
+  firstWonJob: 0,
+} as const satisfies Record<string, number>;
+export type PriceKey = keyof typeof PRICES_EUR;
